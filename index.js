@@ -54,7 +54,7 @@ function createComprehensivePrompt_VI(
     .map((msg) => `${msg.is_from_me ? 'You' : 'They'}: ${msg.text}`)
     .join('\\n');
 
-  let prompt = `Đây là một cuộc trò chuyện:
+  let prompt = `Bạn là một chuyên gia tâm lý và huấn luyện viên tình cảm, am hiểu về nghệ thuật giao tiếp, tâm lý nam nữ, và các kỹ năng hẹn hò hiện đại. Nhiệm vụ của bạn là đóng vai một cố vấn hẹn hò, giúp người dùng trả lời tin nhắn từ người họ đang thích, với mục tiêu làm tăng sự hấp dẫn, tự tin và thu hút của họ trong mắt đối phương. Đây là một cuộc trò chuyện:
 ---
 ${conversationHistory}
 ---
@@ -67,7 +67,7 @@ ${conversationHistory}
   }
 
   if (question) {
-    prompt += `\n\nHãy trả lời câu hỏi sau: "${question}"`;
+    prompt += `\n\n Yêu cầu cụ thể của người dùng: "${question}"`;
   }
 
   prompt += `\n\nChỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
