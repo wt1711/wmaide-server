@@ -42,6 +42,29 @@ app.post('/api/suggestion', async (req, res) => {
   }
 });
 
+app.post('/api/generate-response', async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
+  }
+
+  try {
+    const prompt = createRomanticResponsePrompt(message);
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const romanticResponse = response.choices[0].message.content || 'Không thể tạo phản hồi.';
+    res.json({ response: romanticResponse });
+  } catch (error) {
+    console.error('Error generating romantic response:', error);
+    res.status(500).json({ error: 'Failed to generate romantic response' });
+  }
+});
+
 export default app;
 
 // This function will be called by the server. It's the same logic from your shared/prompts.js
@@ -71,6 +94,23 @@ ${conversationHistory}
   }
 
   prompt += `\n\nChỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
+
+  return prompt;
+}
+
+function createRomanticResponsePrompt(message) {
+  const prompt = `Bạn là một chuyên gia về tình cảm và giao tiếp lãng mạn. Nhiệm vụ của bạn là tạo ra một câu trả lời lãng mạn, chân thành và hấp dẫn cho tin nhắn sau đây:
+
+Tin nhắn: "${message}"
+
+Hãy tạo một câu trả lời:
+- Lãng mạn và chân thành
+- Phù hợp với ngữ cảnh và cảm xúc của tin nhắn gốc
+- Tự nhiên và không quá cường điệu
+- Có thể tạo ra sự kết nối cảm xúc
+- Ngắn gọn nhưng ý nghĩa
+
+Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
   return prompt;
 }
