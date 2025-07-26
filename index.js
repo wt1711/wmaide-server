@@ -97,7 +97,7 @@ ${conversationHistory}
     prompt += `\n\n Câu hỏi cụ thể của người dùng: "${question}"`;
   }
 
-  prompt += `\n\n Câu trả lời của bạn không nên quá 4 câu hoặc 1000 chữ`;
+  prompt += `\n\n Câu trả lời của bạn không nên quá 1 câu hoặc 100 chữ`;
 
   return prompt;
 }
