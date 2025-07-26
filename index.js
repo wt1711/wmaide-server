@@ -23,7 +23,7 @@ app.post('/api/suggestion', async (req, res) => {
   }
 
   try {
-    const prompt = createComprehensivePrompt_VI(
+    const prompt = createConsultationPrompt_VI(
       context,
       selectedMessage,
       question
@@ -72,13 +72,13 @@ app.post('/api/generate-response', async (req, res) => {
 export default app;
 
 // This function will be called by the server. It's the same logic from your shared/prompts.js
-function createComprehensivePrompt_VI(
+function createConsultationPrompt_VI(
   context,
   selectedMessage,
   question
 ) {
   const conversationHistory = context
-    .map((msg) => `${msg.is_from_me ? 'You' : 'They'}: ${msg.text}`)
+    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối Phương'}: ${msg.text}`)
     .join('\\n');
 
   let prompt = `Bạn là một chuyên gia tâm lý và huấn luyện viên tình cảm, am hiểu về nghệ thuật giao tiếp, tâm lý nam nữ, và các kỹ năng hẹn hò hiện đại. Nhiệm vụ của bạn là đóng vai một cố vấn hẹn hò, giúp người dùng trả lời tin nhắn từ người họ đang thích, với mục tiêu làm tăng sự hấp dẫn, tự tin và thu hút của họ trong mắt đối phương. Đây là một cuộc trò chuyện:
@@ -88,16 +88,14 @@ ${conversationHistory}
 `;
 
   if (selectedMessage) {
-    prompt += `Người dùng đã chọn tin nhắn sau: "${selectedMessage.text}"\n\nNhiệm vụ của bạn là tạo ra một câu trả lời cho tin nhắn đã chọn.`;
+    prompt += `Người dùng đã chọn tin nhắn sau: "${selectedMessage.text}"\n\nNhiệm vụ của bạn là tư vấn cho người dùng về cách giao tiếp và hẹn hò`;
   } else {
-    prompt += `Nhiệm vụ của bạn là tạo ra một câu trả lời phù hợp cho tin nhắn cuối cùng trong cuộc trò chuyện.`;
+    prompt += `Nhiệm vụ của bạn tư vấn cho người dùng về cách giao tiếp và hẹn hò`;
   }
 
   if (question) {
-    prompt += `\n\n Yêu cầu cụ thể của người dùng: "${question}"`;
+    prompt += `\n\n Câu hỏi cụ thể của người dùng: "${question}"`;
   }
-
-  prompt += `\n\nChỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
   return prompt;
 }
