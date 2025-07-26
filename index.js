@@ -43,14 +43,18 @@ app.post('/api/suggestion', async (req, res) => {
 });
 
 app.post('/api/generate-response', async (req, res) => {
-  const { message } = req.body;
+  const { context, message } = req.body;
+
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message' });
   }
 
   try {
-    const prompt = createRomanticResponsePrompt(message);
+    const prompt = createRomanticResponsePrompt(context, message);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -98,17 +102,27 @@ ${conversationHistory}
   return prompt;
 }
 
-function createRomanticResponsePrompt(message) {
-  const prompt = `Bạn là một chuyên gia về tình cảm và giao tiếp lãng mạn. Nhiệm vụ của bạn là tạo ra một câu trả lời lãng mạn, chân thành và hấp dẫn cho tin nhắn sau đây:
+function createRomanticResponsePrompt(context, message) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
+    .join('\\n');
 
-Tin nhắn: "${message}"
+  const prompt = `Bạn là một chuyên gia về tình cảm và giao tiếp lãng mạn. Nhiệm vụ của bạn là tạo ra một câu trả lời lãng mạn, chân thành và hấp dẫn cho tin nhắn sau đây.
+
+Đây là lịch sử cuộc trò chuyện:
+---
+${conversationHistory}
+---
+
+Tin nhắn cần trả lời: "${message}"
 
 Hãy tạo một câu trả lời:
 - Lãng mạn và chân thành
-- Phù hợp với ngữ cảnh và cảm xúc của tin nhắn gốc
+- Phù hợp với ngữ cảnh cuộc trò chuyện và cảm xúc của tin nhắn gốc
 - Tự nhiên và không quá cường điệu
 - Có thể tạo ra sự kết nối cảm xúc
 - Ngắn gọn nhưng ý nghĩa
+- Phù hợp với tone và style của cuộc trò chuyện hiện tại
 
 Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
