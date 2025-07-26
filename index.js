@@ -97,6 +97,8 @@ ${conversationHistory}
     prompt += `\n\n Câu hỏi cụ thể của người dùng: "${question}"`;
   }
 
+  prompt += `\n\n Câu trả lời của bạn không nên quá 5 câu hoặc 100 từ`;
+
   return prompt;
 }
 
