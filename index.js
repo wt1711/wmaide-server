@@ -69,33 +69,6 @@ app.post('/api/generate-response', async (req, res) => {
   }
 });
 
-app.post('/api/generate-response2', async (req, res) => {
-  const { context, message } = req.body;
-
-  if (!context) {
-    return res.status(400).json({ error: 'Missing context' });
-  }
-
-  if (!message) {
-    return res.status(400).json({ error: 'Missing message' });
-  }
-
-  try {
-    const prompt = createRomanticResponsePrompt(context, message);
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const romanticResponse = response.choices[0].message.content || 'Không thể tạo phản hồi.';
-    res.json({ response: romanticResponse });
-  } catch (error) {
-    console.error('Error generating romantic response:', error);
-    res.status(500).json({ error: 'Failed to generate romantic response' });
-  }
-});
-
 app.post('/api/generate-response-from-history', async (req, res) => {
   const { context } = req.body;
 
