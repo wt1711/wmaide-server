@@ -69,6 +69,29 @@ app.post('/api/generate-response', async (req, res) => {
   }
 });
 
+app.post('/api/generate-response-from-history', async (req, res) => {
+  const { context } = req.body;
+
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
+
+  try {
+    const prompt = createRomanticResponsePromptFromHistory(context);
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const romanticResponse = response.choices[0].message.content || 'Không thể tạo phản hồi.';
+    res.json({ response: romanticResponse });
+  } catch (error) {
+    console.error('Error generating romantic response:', error);
+    res.status(500).json({ error: 'Failed to generate romantic response' });
+  }
+});
+
 export default app;
 
 // This function will be called by the server. It's the same logic from your shared/prompts.js
@@ -128,4 +151,37 @@ Hãy tạo một câu trả lời:
 Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
   return prompt;
+}
+
+function createRomanticResponsePromptFromHistory(context) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
+    .join('\\n');
+
+  const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra những câu phản hồi để tạo ra cảm giác yêu ghét cho cô ấy muốn phản hồi và tiếp tục câu chuyện, mỗi câu phẩn hồi nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ:
+
+Đây là lịch sử cuộc trò chuyện:
+---
+${conversationHistory}
+---
+
+Hãy tạo một câu gợi chuyện mới:
+- Kích thích và cuốn hút
+- Phù hợp với ngữ cảnh cuộc trò chuyện
+- Dùng văn nói thông thường
+- không cường điệu hoá cảm xúc
+- Tạo ra cảm xúc trong lòng đối phương
+- Ngắn gọn nhưng ý nghĩa
+- Phù hợp với tone và style của cuộc trò chuyện hiện tại
+
+Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
+
+  return prompt;
+}
+
+// Start server if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
 }
