@@ -159,7 +159,7 @@ function createRomanticResponsePromptFromHistory(context) {
     .join('\\n');
 
     
-    const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra một câu nói tạo chủ đề mới để cô ấy muốn tiếp tục câu chuyện, câu mở chủ đề nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ:
+    const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra một câu nói tạo chủ đề mới để cô ấy muốn tiếp tục câu chuyện, câu mở chủ đề nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ, và chỉ được thể hiện 1 ý:
 Đây là lịch sử cuộc trò chuyện:
 ---
 ${conversationHistory}
