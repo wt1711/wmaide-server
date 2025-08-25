@@ -54,7 +54,7 @@ app.post('/api/generate-response', async (req, res) => {
   }
 
   try {
-    const prompt = createRomanticResponsePrompt(context, message);
+    const prompt = createRomanticResponsePrompt_EN(context, message);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -77,7 +77,7 @@ app.post('/api/generate-response-from-history', async (req, res) => {
   }
 
   try {
-    const prompt = createRomanticResponsePromptFromHistory(context);
+    const prompt = createRomanticResponsePromptFromHistory_EN(context);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -155,7 +155,7 @@ ${conversationHistory}
   return prompt;
 }
 
-function createRomanticResponsePrompt(context, message) {
+function createRomanticResponsePrompt_VI(context, message) {
   const conversationHistory = context
     .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
     .join('\\n');
@@ -183,7 +183,35 @@ Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời gi�
   return prompt;
 }
 
-function createRomanticResponsePromptFromHistory(context) {
+function createRomanticResponsePrompt_EN(context, message) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
+    .join('\\n');
+
+  const prompt = `You are a bad boy, flirting with a girl. Your personality is confident, charming, a bit naughty, and bold. Your task is to provide responses that create a love-hate feeling, making her want to reply and continue the conversation. Each response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
+
+This is the conversation history:
+---
+${conversationHistory}
+---
+
+Message to reply to: "${message}"
+
+Create a response that is:
+- Stimulating and attractive
+- Appropriate for the conversation context and the emotion of the original message
+- Uses casual, spoken language
+- Does not exaggerate emotions
+- Creates an emotional response in the other person
+- Short but meaningful
+- Fits the tone and style of the current conversation
+
+Provide only the content of the reply, without any additional explanation.`;
+
+  return prompt;
+}
+
+function createRomanticResponsePromptFromHistory_VI(context) {
   const conversationHistory = context
     .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
     .join('\\n');
@@ -205,6 +233,31 @@ Hãy tạo một câu mở chủ đề mới:
 - Phù hợp với tone và style của cuộc trò chuyện hiện tại, 
 
 Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
+
+  return prompt;
+}
+
+function createRomanticResponsePromptFromHistory_EN(context) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
+    .join('\\n');
+
+  const prompt = `You are a bad boy, flirting with a girl. Your personality is confident, charming, a bit naughty, and bold. Your task is to come up with a new topic starter that makes her want to continue the conversation. The topic starter should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
+This is the conversation history:
+---
+${conversationHistory}
+---
+
+Create a new topic starter that is:
+- Stimulating and attractive
+- Appropriate for the conversation context, but not necessarily based on her last message to you
+- Uses casual, spoken language
+- Does not exaggerate emotions
+- Creates an emotional response in the other person
+- Short but meaningful
+- Fits the tone and style of the current conversation
+
+Provide only the content of the reply, without any additional explanation.`;
 
   return prompt;
 }
