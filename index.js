@@ -23,7 +23,7 @@ app.post('/api/suggestion', async (req, res) => {
   }
 
   try {
-    const prompt = createConsultationPrompt_VI(
+    const prompt = createConsultationPrompt_EN(
       context,
       selectedMessage,
       question
@@ -121,6 +121,36 @@ ${conversationHistory}
   }
 
   prompt += `\n\n Câu trả lời của bạn không nên quá 4 câu hoặc 1000 chữ`;
+
+  return prompt;
+}
+
+function createConsultationPrompt_EN(
+  context,
+  selectedMessage,
+  question
+) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
+    .join('\\n');
+
+  let prompt = `You are an expert in flirting and women's psychology. Your task is to advise the user on the other person's psychology in the story based on the selected context, how the other person perceives the user based on the context, and how to successfully achieve the dating goals set by the user. Your personality is frank, humorous, and slightly sarcastic. You will answer concisely, to the point, without going into too much detail unless requested, and be honest with the user about the actual situation instead of coddling their feelings.
+---
+${conversationHistory}
+---
+`;
+
+  if (selectedMessage) {
+    prompt += `The user has selected the following message: "${selectedMessage.text}"\n\nYour task is to advise the user on the other person's psychology and the relationship between the two based on the context.`;
+  } else {
+    prompt += `Your task is to advise the user on flirting, analyzing women's psychology, and dating.`;
+  }
+
+  if (question) {
+    prompt += `\n\n The user's specific question: "${question}"`;
+  }
+
+  prompt += `\n\n Your answer should not exceed 4 sentences or 1000 characters.`;
 
   return prompt;
 }
