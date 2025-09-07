@@ -307,6 +307,7 @@ A high negative score (e.g., -90) means the response is terrible, cringe-worthy,
 If you cannot understand the content of the response, you must return 0.
 For any other case, you must return an integer between -100 and 100, but it cannot be 0.
 Only return the integer grade and nothing else. Do not provide any explanation.
+Tend to give more positive score, to encourage user, but still gives negative score if the content is offsenive
 
 ---
 Conversation History:
