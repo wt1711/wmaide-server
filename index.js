@@ -200,7 +200,6 @@ Create a response that is:
 
 Provide only the content of the reply, without any additional explanation.`;
 
-  console.log(prompt);
   return prompt;
 }
 
