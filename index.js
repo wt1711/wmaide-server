@@ -127,37 +127,6 @@ app.post('/api/grade-response', async (req, res) => {
 
 export default app;
 
-// This function will be called by the server. It's the same logic from your shared/prompts.js
-function createConsultationPrompt_VI(
-  context,
-  selectedMessage,
-  question
-) {
-  const conversationHistory = context
-    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối Phương'}: ${msg.text}`)
-    .join('\\n');
-
-  let prompt = `Bạn là một chuyên gia về tán tỉnh và tâm lý phụ nữ, nhiệm vụ của bạn là tham vấn cho người dùng về tâm lý đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận về người sử dụng dựa trên ngữ cảnh, và cách thành công đạt được mục tiêu trong chuyện hẹn hò người dùng đưa ra. Tính cách của bạn là thẳng thắn, hài hước, xen chút mỉa mai. Bạn sẽ trả lời một cách xúc tích, vào vấn đề, không đi quá sâu vào chi tiết trừ khi người dùng yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì vỗ về cảm xúc của họ. 
----
-${conversationHistory}
----
-`;
-
-  if (selectedMessage) {
-    prompt += `Người dùng đã chọn tin nhắn sau: "${selectedMessage.text}"\n\nNhiệm vụ của bạn là tư vấn cho người dùng về tâm lý đối phương và mối quan hệ giữa 2 người dựa trên ngữ cảnh`;
-  } else {
-    prompt += `Nhiệm vụ của bạn tư vấn cho người dùng về cách tán tỉnh, phân tích tâm lý phụ nữ, và hẹn hò`;
-  }
-
-  if (question) {
-    prompt += `\n\n Câu hỏi cụ thể của người dùng: "${question}"`;
-  }
-
-  prompt += `\n\n Câu trả lời của bạn không nên quá 4 câu hoặc 1000 chữ`;
-
-  return prompt;
-}
-
 function createConsultationPrompt_EN(
   context,
   selectedMessage,
@@ -188,44 +157,31 @@ ${conversationHistory}
   return prompt;
 }
 
-function createRomanticResponsePrompt_VI(context, message, tone) {
+function createRomanticResponsePrompt_EN(context, message, tone = "Gentleman") {
   const conversationHistory = context
-    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
-    .join('\\n');
+    .map((msg) => `${msg.is_from_me ? "You" : "Them"}: ${msg.text}`)
+    .join("\n");
 
-  const toneInstruction = tone ? `\n- Giọng điệu của bạn nên là ${tone}.` : '';
+  // Define persona styles
+  const personaMap = {
+    "Nice Guy": {
+      description: `You are a nice guy, sweet and caring. Your personality is warm, supportive, and considerate. 
+Your task is to provide responses that make her feel safe, appreciated, and valued.`,
+    },
+    "Gentleman": {
+      description: `You are a gentleman, confident but respectful. Your personality is charming, witty, and subtly romantic. 
+Your task is to provide responses that are smooth, respectful, and make her feel admired.`,
+    },
+    "Bad Boy": {
+      description: `You are a bad boy, flirting with a girl. Your personality is confident, bold, and a bit naughty. 
+Your task is to provide responses that create a love-hate feeling, making her want to reply and continue the conversation.`,
+    },
+  };
 
-  const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra những câu phản hồi để tạo ra cảm giác yêu ghét cho cô ấy muốn phản hồi và tiếp tục câu chuyện, mỗi câu phẩn hồi nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ, và chỉ được thể hiện 1 ý:
+  // Fallback if invalid tone is passed
+  const persona = personaMap[tone] || personaMap["Gentleman"];
 
-Đây là lịch sử cuộc trò chuyện:
----
-${conversationHistory}
----
-
-Tin nhắn cần trả lời: "${message}"
-
-Hãy tạo một câu trả lời:
-- Kích thích và cuốn hút
-- Phù hợp với ngữ cảnh cuộc trò chuyện và cảm xúc của tin nhắn gốc
-- Dùng văn nói thông thường
-- không cường điệu hoá cảm xúc
-- Tạo ra cảm xúc trong lòng đối phương
-- Ngắn gọn nhưng ý nghĩa
-- Phù hợp với tone và style của cuộc trò chuyện hiện tại${toneInstruction}
-
-Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
-
-  return prompt;
-}
-
-function createRomanticResponsePrompt_EN(context, message, tone) {
-  const conversationHistory = context
-    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
-    .join('\\n');
-
-  const toneInstruction = tone ? `\n- Your response should have a ${tone} tone.` : '';
-
-  const prompt = `You are a bad boy, flirting with a girl. Your personality is confident, charming, a bit naughty, and bold. Your task is to provide responses that create a love-hate feeling, making her want to reply and continue the conversation. Each response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
+  const prompt = `${persona.description} Each response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
 
 This is the conversation history:
 ---
@@ -241,35 +197,8 @@ Create a response that is:
 - Does not exaggerate emotions
 - Creates an emotional response in the other person
 - Short but meaningful
-- Fits the tone and style of the current conversation${toneInstruction}
 
 Provide only the content of the reply, without any additional explanation.`;
-
-  return prompt;
-}
-
-function createRomanticResponsePromptFromHistory_VI(context) {
-  const conversationHistory = context
-    .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
-    .join('\\n');
-
-    
-    const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra một câu nói tạo chủ đề mới để cô ấy muốn tiếp tục câu chuyện, câu mở chủ đề nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ, và chỉ được thể hiện 1 ý:
-Đây là lịch sử cuộc trò chuyện:
----
-${conversationHistory}
----
-
-Hãy tạo một câu mở chủ đề mới:
-- Kích thích và cuốn hút
-- Phù hợp với ngữ cảnh cuộc trò chuyện, nhưng không nhất thiết phải dựa vào tin nhắn cuối cùng của cô ấy với bạn
-- Dùng văn nói thông thường
-- không cường điệu hoá cảm xúc
-- Tạo ra cảm xúc trong lòng đối phương
-- Ngắn gọn nhưng ý nghĩa
-- Phù hợp với tone và style của cuộc trò chuyện hiện tại, 
-
-Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
   return prompt;
 }
