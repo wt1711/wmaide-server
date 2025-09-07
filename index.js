@@ -92,6 +92,39 @@ app.post('/api/generate-response-from-history', async (req, res) => {
   }
 });
 
+app.post('/api/grade-response', async (req, res) => {
+  const { context, response } = req.body;
+
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
+
+  if (!response) {
+    return res.status(400).json({ error: 'Missing response to grade' });
+  }
+
+  try {
+    const prompt = createGradeResponsePrompt_EN(context, response);
+
+    const openAIResponse = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const gradeText = openAIResponse.choices[0].message.content || '0';
+    const grade = parseInt(gradeText.trim(), 10);
+
+    if (isNaN(grade)) {
+      res.json({ grade: 0 });
+    } else {
+      res.json({ grade });
+    }
+  } catch (error) {
+    console.error('Error grading response:', error);
+    res.status(500).json({ error: 'Failed to grade response' });
+  }
+});
+
 export default app;
 
 // This function will be called by the server. It's the same logic from your shared/prompts.js
@@ -258,6 +291,31 @@ Create a new topic starter that is:
 - Fits the tone and style of the current conversation
 
 Provide only the content of the reply, without any additional explanation.`;
+
+  return prompt;
+}
+
+function createGradeResponsePrompt_EN(context, responseToGrade) {
+  const conversationHistory = context
+    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
+    .join('\\n');
+
+  const prompt = `You are an expert in flirting and women's psychology. Your task is to grade a response in a conversation based on its context.
+The grade should be an integer between -100 and 100.
+A high positive score (e.g., 90) means the response is excellent, charismatic, and moves the conversation forward in a positive way.
+A high negative score (e.g., -90) means the response is terrible, cringe-worthy, or offensive and will likely end the conversation.
+If you cannot understand the content of the response, you must return 0.
+For any other case, you must return an integer between -100 and 100, but it cannot be 0.
+Only return the integer grade and nothing else. Do not provide any explanation.
+
+---
+Conversation History:
+${conversationHistory}
+---
+
+Response to grade: "${responseToGrade}"
+
+Grade:`;
 
   return prompt;
 }
