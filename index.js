@@ -111,7 +111,6 @@ app.post('/api/grade-response', async (req, res) => {
       messages: [{ role: 'user', content: prompt }],
     });
 
-    console.log(`openAIResponse`, openAIResponse.choices[0].message.content)
     const gradeText = openAIResponse.choices[0].message.content || '0';
     const grade = parseInt(gradeText.trim(), 10);
 
