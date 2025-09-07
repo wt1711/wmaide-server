@@ -43,7 +43,7 @@ app.post('/api/suggestion', async (req, res) => {
 });
 
 app.post('/api/generate-response', async (req, res) => {
-  const { context, message } = req.body;
+  const { context, message, tone } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -54,7 +54,7 @@ app.post('/api/generate-response', async (req, res) => {
   }
 
   try {
-    const prompt = createRomanticResponsePrompt_EN(context, message);
+    const prompt = createRomanticResponsePrompt_EN(context, message, tone);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -188,10 +188,12 @@ ${conversationHistory}
   return prompt;
 }
 
-function createRomanticResponsePrompt_VI(context, message) {
+function createRomanticResponsePrompt_VI(context, message, tone) {
   const conversationHistory = context
     .map((msg) => `${msg.is_from_me ? 'Bạn' : 'Đối phương'}: ${msg.text}`)
     .join('\\n');
+
+  const toneInstruction = tone ? `\n- Giọng điệu của bạn nên là ${tone}.` : '';
 
   const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra những câu phản hồi để tạo ra cảm giác yêu ghét cho cô ấy muốn phản hồi và tiếp tục câu chuyện, mỗi câu phẩn hồi nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ, và chỉ được thể hiện 1 ý:
 
@@ -209,17 +211,19 @@ Hãy tạo một câu trả lời:
 - không cường điệu hoá cảm xúc
 - Tạo ra cảm xúc trong lòng đối phương
 - Ngắn gọn nhưng ý nghĩa
-- Phù hợp với tone và style của cuộc trò chuyện hiện tại
+- Phù hợp với tone và style của cuộc trò chuyện hiện tại${toneInstruction}
 
 Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.`;
 
   return prompt;
 }
 
-function createRomanticResponsePrompt_EN(context, message) {
+function createRomanticResponsePrompt_EN(context, message, tone) {
   const conversationHistory = context
     .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
     .join('\\n');
+
+  const toneInstruction = tone ? `\n- Your response should have a ${tone} tone.` : '';
 
   const prompt = `You are a bad boy, flirting with a girl. Your personality is confident, charming, a bit naughty, and bold. Your task is to provide responses that create a love-hate feeling, making her want to reply and continue the conversation. Each response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
 
@@ -237,7 +241,7 @@ Create a response that is:
 - Does not exaggerate emotions
 - Creates an emotional response in the other person
 - Short but meaningful
-- Fits the tone and style of the current conversation
+- Fits the tone and style of the current conversation${toneInstruction}
 
 Provide only the content of the reply, without any additional explanation.`;
 
