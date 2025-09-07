@@ -94,6 +94,7 @@ app.post('/api/generate-response-from-history', async (req, res) => {
 
 app.post('/api/grade-response', async (req, res) => {
   const { context, response } = req.body;
+  console.log(prompt);
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
