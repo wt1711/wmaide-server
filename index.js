@@ -94,8 +94,6 @@ app.post('/api/generate-response-from-history', async (req, res) => {
 
 app.post('/api/grade-response', async (req, res) => {
   const { context, response } = req.body;
-  console.log(`context`, context);
-  console.log(`response`, response);
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -107,13 +105,13 @@ app.post('/api/grade-response', async (req, res) => {
 
   try {
     const prompt = createGradeResponsePrompt_EN(context, response);
-    console.log(`prompt`, prompt);
 
     const openAIResponse = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
     });
 
+    console.log(`openAIResponse`, openAIResponse.choices[0].message.content)
     const gradeText = openAIResponse.choices[0].message.content || '0';
     const grade = parseInt(gradeText.trim(), 10);
 
