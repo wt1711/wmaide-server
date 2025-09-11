@@ -54,7 +54,7 @@ app.post('/api/suggestion', async (req, res) => {
 });
 
 app.post('/api/generate-response', async (req, res) => {
-  const { context, message, tone } = req.body;
+  const { context, message, spec } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -64,7 +64,7 @@ app.post('/api/generate-response', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  const prompt = createRomanticResponsePrompt_EN(context, message, tone);
+  const prompt = createRomanticResponsePrompt_EN(context, message, spec);
   const romanticResponse = await callOpenAI(
     res,
     prompt,

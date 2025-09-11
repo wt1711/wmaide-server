@@ -31,30 +31,53 @@ ${conversationHistory}
 export function createRomanticResponsePrompt_EN(
   context,
   message,
-  tone = 'Gentleman'
+  spec = {
+    filter: 'Main Character',
+    spiciness: 50,
+    boldness: 50,
+    thirst: 50,
+    energy: 50,
+    toxicity: 50,
+    humour: 50,
+    emojiUse: 50,
+  }
 ) {
   const conversationHistory = getConversationHistory(context);
 
-  // Define persona styles
-  const personaMap = {
-    'Nice Guy': {
-      description: `You are a nice guy, sweet and caring. Your personality is warm, supportive, and considerate. 
-Your task is to provide responses that make her feel safe, appreciated, and valued.`,
-    },
-    Gentleman: {
-      description: `You are a gentleman, confident but respectful. Your personality is charming, witty, and subtly romantic. 
-Your task is to provide responses that are smooth, respectful, and make her feel admired.`,
-    },
-    'Bad Boy': {
-      description: `You are a bad boy, flirting with a girl. Your personality is confident, bold, and a bit naughty. 
-Your task is to provide responses that create a love-hate feeling, making her want to reply and continue the conversation.`,
-    },
+  const {
+    filter,
+    spiciness,
+    boldness,
+    thirst,
+    energy,
+    toxicity,
+    humour,
+    emojiUse,
+  } = spec;
+
+  // Define filters
+  const filterMap = {
+    Chad: 'Your persona is Chad: confident, blunt, high-status energy.',
+    Rizz: 'Your persona is Rizz: smooth, wordplay, flirty finesse.',
+    Simp: 'Your persona is Simp: sweet, wholesome, try-hard vibes.',
+    'Main Character':
+      'Your persona is Main Character: dramatic, cinematic, larger-than-life tone.',
   };
 
-  // Fallback if invalid tone is passed
-  const persona = personaMap[tone] || personaMap['Gentleman'];
+  const selectedFilter = filterMap[filter] || filterMap['Rizz'];
 
-  const prompt = `${persona.description} Each response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
+  const prompt = `${selectedFilter}
+You are generating a response to a message in a conversation.
+Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.
+
+Fine-tune the response based on the following sliders (0-100 scale):
+- Spiciness (${spiciness}): 0 is mild teasing, 100 is heavy innuendo.
+- Boldness (${boldness}): 0 is reserved, 100 is alpha assertive.
+- Thirst (${thirst}): 0 is subtle interest, 100 is down bad.
+- Energy (${energy}): 0 is chill, 100 is hype/excited.
+- Toxicity (${toxicity}): 0 is a nice guy, 100 is a villain arc.
+- Humour (${humour}): 0 is dry wit, 100 is full clown.
+- Emoji Use (${emojiUse}): 0 is clean text, 100 is Gen Z emoji spam.
 
 This is the conversation history:
 ---
