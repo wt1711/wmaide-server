@@ -43,6 +43,7 @@ export function createRomanticResponsePrompt_EN(
   }
 ) {
   const conversationHistory = getConversationHistory(context);
+  console.log(spec);
 
   const {
     filter,
