@@ -5,7 +5,6 @@ import OpenAI from 'openai';
 import {
   createConsultationPrompt_EN,
   createGradeResponsePrompt_EN,
-  createRomanticResponsePromptFromHistory_EN,
   createRomanticResponsePrompt_EN,
 } from './prompts.js';
 
@@ -66,23 +65,6 @@ app.post('/api/generate-response', async (req, res) => {
   }
 
   const prompt = createRomanticResponsePrompt_EN(context, message, tone);
-  const romanticResponse = await callOpenAI(
-    res,
-    prompt,
-  );
-  if (romanticResponse) {
-    res.json({ response: romanticResponse });
-  }
-});
-
-app.post('/api/generate-response-from-history', async (req, res) => {
-  const { context } = req.body;
-
-  if (!context) {
-    return res.status(400).json({ error: 'Missing context' });
-  }
-
-  const prompt = createRomanticResponsePromptFromHistory_EN(context);
   const romanticResponse = await callOpenAI(
     res,
     prompt,

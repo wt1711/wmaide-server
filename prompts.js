@@ -76,29 +76,6 @@ Provide only the content of the reply, without any additional explanation.`;
   return prompt;
 }
 
-export function createRomanticResponsePromptFromHistory_EN(context) {
-  const conversationHistory = getConversationHistory(context);
-
-  const prompt = `You are a bad boy, flirting with a girl. Your personality is confident, charming, a bit naughty, and bold. Your task is to come up with a new topic starter that makes her want to continue the conversation. The topic starter should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea:
-This is the conversation history:
----
-${conversationHistory}
----
-
-Create a new topic starter that is:
-- Stimulating and attractive
-- Appropriate for the conversation context, but not necessarily based on her last message to you
-- Uses casual, spoken language
-- Does not exaggerate emotions
-- Creates an emotional response in the other person
-- Short but meaningful
-- Fits the tone and style of the current conversation
-
-Provide only the content of the reply, without any additional explanation.`;
-
-  return prompt;
-}
-
 export function createGradeResponsePrompt_EN(context, responseToGrade) {
   const conversationHistory = getConversationHistory(context);
 
