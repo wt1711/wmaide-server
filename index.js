@@ -21,7 +21,7 @@ const openai = new OpenAI({
 app.use(cors());
 app.use(express.json());
 
-const callOpenAI = async (res, prompt, defaultResponse) => {
+const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response from OpenAI') => {
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -30,7 +30,7 @@ const callOpenAI = async (res, prompt, defaultResponse) => {
     return response.choices[0].message.content || defaultResponse;
   } catch (error) {
     console.error('Error calling OpenAI:', error);
-    res.status(500).json({ error: 'Failed to get response from OpenAI' });
+    res.status(500).json({ error: 'Error from OpenAI' });
     return null;
   }
 };
@@ -48,7 +48,7 @@ app.post('/api/suggestion', async (req, res) => {
     question
   );
 
-  const suggestion = await callOpenAI(res, prompt, 'Không có gợi ý nào.');
+  const suggestion = await callOpenAI(res, prompt);
   if (suggestion) {
     res.json({ suggestion });
   }
@@ -69,7 +69,6 @@ app.post('/api/generate-response', async (req, res) => {
   const romanticResponse = await callOpenAI(
     res,
     prompt,
-    'Không thể tạo phản hồi.'
   );
   if (romanticResponse) {
     res.json({ response: romanticResponse });
@@ -87,7 +86,6 @@ app.post('/api/generate-response-from-history', async (req, res) => {
   const romanticResponse = await callOpenAI(
     res,
     prompt,
-    'Không thể tạo phản hồi.'
   );
   if (romanticResponse) {
     res.json({ response: romanticResponse });
