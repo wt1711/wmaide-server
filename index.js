@@ -3,10 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import {
-  createConsultationPrompt_EN,
-  createGradeResponsePrompt_EN,
   createRomanticResponsePrompt_EN,
 } from './prompts.js';
+import createGradeRoute from './routes/grade.js';
+import createSuggestionRoute from './routes/suggestion.js';
+import createGenerateResponse2Route from './routes/generate-response2.js';
 
 dotenv.config();
 
@@ -34,45 +35,16 @@ const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response fr
   }
 };
 
-app.post('/api/suggestion', async (req, res) => {
-  const { context, selectedMessage, question } = req.body;
+// Mount grade routes
+app.use('/api', createGradeRoute(callOpenAI));
 
-  if (!context) {
-    return res.status(400).json({ error: 'Missing context' });
-  }
+// Mount suggestion routes
+app.use('/api', createSuggestionRoute(callOpenAI));
 
-  const prompt = createConsultationPrompt_EN(
-    context,
-    selectedMessage,
-    question
-  );
+// Mount generate-response2 routes
+app.use('/api', createGenerateResponse2Route(callOpenAI));
 
-  const suggestion = await callOpenAI(res, prompt);
-  if (suggestion) {
-    res.json({ suggestion });
-  }
-});
 
-app.post('/api/generate-response2', async (req, res) => {
-  const { context, message, spec } = req.body;
-
-  if (!context) {
-    return res.status(400).json({ error: 'Missing context' });
-  }
-
-  if (!message) {
-    return res.status(400).json({ error: 'Missing message' });
-  }
-
-  const prompt = createRomanticResponsePrompt_EN(context, message, spec);
-  const romanticResponse = await callOpenAI(
-    res,
-    prompt,
-  );
-  if (romanticResponse) {
-    res.json({ response: romanticResponse });
-  }
-});
 
 app.post('/api/generate-response', async (req, res) => {
   const { context, message, spec } = req.body;
@@ -95,29 +67,6 @@ app.post('/api/generate-response', async (req, res) => {
   }
 });
 
-app.post('/api/grade-response', async (req, res) => {
-  const { context, response } = req.body;
-
-  if (!context) {
-    return res.status(400).json({ error: 'Missing context' });
-  }
-
-  if (!response) {
-    return res.status(400).json({ error: 'Missing response to grade' });
-  }
-
-  const prompt = createGradeResponsePrompt_EN(context, response);
-  const gradeText = await callOpenAI(res, prompt, '0');
-
-  if (gradeText) {
-    const grade = parseInt(gradeText.trim(), 10);
-    if (isNaN(grade)) {
-      res.json({ grade: 0 });
-    } else {
-      res.json({ grade });
-    }
-  }
-});
 
 export default app;
 
