@@ -53,6 +53,27 @@ app.post('/api/suggestion', async (req, res) => {
   }
 });
 
+app.post('/api/generate-response2', async (req, res) => {
+  const { context, message, spec } = req.body;
+
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
+  }
+
+  const prompt = createRomanticResponsePrompt_EN(context, message, spec);
+  const romanticResponse = await callOpenAI(
+    res,
+    prompt,
+  );
+  if (romanticResponse) {
+    res.json({ response: romanticResponse });
+  }
+});
+
 app.post('/api/generate-response', async (req, res) => {
   const { context, message, spec } = req.body;
 
