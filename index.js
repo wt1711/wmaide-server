@@ -22,14 +22,24 @@ app.use(cors());
 app.use(express.json());
 
 const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response from OpenAI') => {
+  const startTime = Date.now();
+  console.log('🚀 Starting OpenAI API call at:', new Date().toISOString());
+  
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
     });
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`✅ OpenAI API call completed in ${duration}ms (${(duration/1000).toFixed(2)}s)`);
+    
     return response.choices[0].message.content || defaultResponse;
   } catch (error) {
-    console.error('Error calling OpenAI:', error);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.error(`❌ OpenAI API call failed after ${duration}ms (${(duration/1000).toFixed(2)}s):`, error);
     res.status(500).json({ error: 'Error from OpenAI' });
     return null;
   }
@@ -47,6 +57,9 @@ app.use('/api', createGenerateResponse2Route(callOpenAI));
 
 
 app.post('/api/generate-response', async (req, res) => {
+  const requestStartTime = Date.now();
+  console.log('📝 Starting /api/generate-response request at:', new Date().toISOString());
+  
   const { context, message, spec } = req.body;
 
   if (!context) {
@@ -62,8 +75,18 @@ app.post('/api/generate-response', async (req, res) => {
     res,
     prompt,
   );
+  
   if (romanticResponse) {
-    res.json({ response: romanticResponse });
+    const requestEndTime = Date.now();
+    const totalDuration = requestEndTime - requestStartTime;
+    console.log(`🎯 Total request time: ${totalDuration}ms (${(totalDuration/1000).toFixed(2)}s)`);
+    res.json({ 
+      response: romanticResponse,
+      timing: {
+        totalDuration: totalDuration,
+        totalDurationSeconds: (totalDuration/1000).toFixed(2)
+      }
+    });
   }
 });
 

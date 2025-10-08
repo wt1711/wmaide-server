@@ -27,7 +27,9 @@ async function createThread() {
 }
 
 async function addMessage(threadId, message) {
-    console.log('Adding a new message to thread: ' + threadId);
+    const startTime = Date.now();
+    console.log('📤 Adding a new message to thread: ' + threadId);
+    
     const response = await openai.beta.threads.messages.create(
         threadId,
         {
@@ -35,11 +37,18 @@ async function addMessage(threadId, message) {
             content: message
         }
     );
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`✅ Message added in ${duration}ms (${(duration/1000).toFixed(2)}s)`);
+    
     return response;
 }
 
 async function runAssistant(threadId) {
-    console.log('Running assistant for thread: ' + threadId)
+    const startTime = Date.now();
+    console.log('🤖 Running assistant for thread: ' + threadId);
+    
     const response = await openai.beta.threads.runs.create(
         threadId,
         { 
@@ -48,7 +57,10 @@ async function runAssistant(threadId) {
         }
       );
 
-    console.log('response', response)
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`✅ Assistant run started in ${duration}ms (${(duration/1000).toFixed(2)}s)`);
+    console.log('response', response);
 
     return response;
 }
@@ -75,13 +87,21 @@ async function checkingStatus(res, threadId, runId) {
         console.log('- runId:', runId, '(type:', typeof runId, ')');
         
         let runObject;
+        const retrieveStartTime = Date.now();
         try {
             runObject = await openai.beta.threads.runs.retrieve(
                 runId,
                 {"thread_id": threadId, "run_id": runId}
             );
+            
+            const retrieveEndTime = Date.now();
+            const retrieveDuration = retrieveEndTime - retrieveStartTime;
+            console.log(`⏱️ Status check took ${retrieveDuration}ms`);
+            
         } catch (retrieveError) {
-            console.error('Error in retrieve call:', retrieveError);
+            const retrieveEndTime = Date.now();
+            const retrieveDuration = retrieveEndTime - retrieveStartTime;
+            console.error(`❌ Status check failed after ${retrieveDuration}ms:`, retrieveError);
             console.error('Error details:', {
                 message: retrieveError.message,
                 status: retrieveError.status,
@@ -104,10 +124,44 @@ async function checkingStatus(res, threadId, runId) {
                 messages.push(message.content);
             });
 
-            res.json({ messages });
+            // Calculate total time if available
+            const requestStartTime = res.locals.requestStartTime;
+            let timingInfo = {};
+            if (requestStartTime) {
+                const requestEndTime = Date.now();
+                const totalDuration = requestEndTime - requestStartTime;
+                timingInfo = {
+                    totalDuration: totalDuration,
+                    totalDurationSeconds: (totalDuration/1000).toFixed(2)
+                };
+                console.log(`🎯 Total Assistant API request time: ${totalDuration}ms (${(totalDuration/1000).toFixed(2)}s)`);
+            }
+
+            res.json({ 
+                messages,
+                timing: timingInfo
+            });
         } else if (status == 'failed' || status == 'cancelled') {
             clearInterval(pollingInterval);
-            res.status(500).json({ error: `Run ${status}`, status });
+            
+            // Calculate total time for failed requests too
+            const requestStartTime = res.locals.requestStartTime;
+            let timingInfo = {};
+            if (requestStartTime) {
+                const requestEndTime = Date.now();
+                const totalDuration = requestEndTime - requestStartTime;
+                timingInfo = {
+                    totalDuration: totalDuration,
+                    totalDurationSeconds: (totalDuration/1000).toFixed(2)
+                };
+                console.log(`❌ Assistant API request failed after ${totalDuration}ms (${(totalDuration/1000).toFixed(2)}s)`);
+            }
+            
+            res.status(500).json({ 
+                error: `Run ${status}`, 
+                status,
+                timing: timingInfo
+            });
         }
     } catch (error) {
         console.error('Error checking status:', error);
@@ -129,6 +183,9 @@ app.get('/thread', (req, res) => {
 })
 
 app.post('/message', async (req, res) => {
+    const requestStartTime = Date.now();
+    console.log('📝 Starting /message request at:', new Date().toISOString());
+    
     const { message, threadId } = req.body;
     
     console.log('Received request:', { message, threadId });
@@ -148,6 +205,9 @@ app.post('/message', async (req, res) => {
         const runId = run.id;
         console.log('Run started:', runId, 'for thread:', threadId);
         
+        // Store timing info for later use
+        res.locals.requestStartTime = requestStartTime;
+        
         // Check the status
         pollingInterval = setInterval(() => {
             console.log('Polling status for threadId:', threadId, 'runId:', runId);
@@ -155,7 +215,9 @@ app.post('/message', async (req, res) => {
         }, 5000);
         
     } catch (error) {
-        console.error('Error in message route:', error);
+        const requestEndTime = Date.now();
+        const totalDuration = requestEndTime - requestStartTime;
+        console.error(`❌ Message route failed after ${totalDuration}ms (${(totalDuration/1000).toFixed(2)}s):`, error);
         res.status(500).json({ error: 'Failed to process message', details: error.message });
     }
 });
