@@ -42,6 +42,8 @@ export function createRomanticResponsePrompt_EN(
     emojiUse: 50,
   }
 ) {
+
+  console.log('createRomanticResponsePrompt_EN', context, message, spec);
   const conversationHistory = getConversationHistory(context);
 
   const {
