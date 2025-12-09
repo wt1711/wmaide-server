@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
@@ -121,8 +122,8 @@ app.post('/api/generate-response', async (req, res) => {
 });
 
 app.get('/admin.html', (req, res) => {
-  // This tells the server exactly where the file is located and serves it.
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    // This tells the server exactly where the file is located and serves it.
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 
