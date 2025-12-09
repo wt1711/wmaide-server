@@ -120,6 +120,11 @@ app.post('/api/generate-response', async (req, res) => {
   }
 });
 
+app.get('/admin.html', (req, res) => {
+  // This tells the server exactly where the file is located and serves it.
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 
 export default app;
 
