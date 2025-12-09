@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Prompt Admin</title>
+  <title>Prompt Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -14,9 +14,11 @@
       background: #f5f5f5;
     }
     h1 { color: #333; }
-    #prompt {
+    h2 { color: #555; margin-top: 40px; }
+    .section { margin-bottom: 30px; }
+    textarea {
       width: 100%;
-      height: 400px;
+      height: 300px;
       padding: 12px;
       font-size: 14px;
       font-family: monospace;
@@ -24,7 +26,7 @@
       border-radius: 4px;
       resize: vertical;
     }
-    #save {
+    button {
       margin-top: 12px;
       padding: 12px 24px;
       font-size: 16px;
@@ -34,57 +36,144 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    #save:hover { background: #0056b3; }
-    #save:disabled { background: #ccc; cursor: not-allowed; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .static-context {
+      background: #e9ecef;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .static-context h3 {
+      margin-top: 0;
+      color: #666;
+    }
+    .static-context pre {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      margin: 0;
+      color: #555;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 30px 0;
+    }
   </style>
 </head>
 <body>
-  <h1>System Prompt Admin</h1>
-  <textarea id="prompt" placeholder="Loading..."></textarea>
-  <br>
-  <button id="save">Save</button>
+  <h1>Prompt Bulder</h1>
+
+  <div class="section">
+    <h2>Part 1: AI Persona</h2>
+    <textarea id="system-prompt" placeholder="Loading..."></textarea>
+    <br>
+    <button id="save-system-prompt">Save Persona</button>
+  </div>
+
+  <hr>
+  <div class="static-context">
+    <h3>Part 2: Conversation Context (Get from conversation)</h3>
+    <p>This is the conversation history:</p>
+<pre>[Conversation got from Matrix]</pre>
+
+<p>Message to reply to:</p>
+<pre>[the last message sent by counter party, also got from Matrix]</pre>
+  </div>
+  <hr>
+
+  <div class="section">
+    <h2>Part 3: Response Criteria</h2>
+    <textarea id="response-criteria" placeholder="Loading..."></textarea>
+    <br>
+    <button id="save-response-criteria">Save Response Criteria</button>
+  </div>
 
   <script>
-    const promptEl = document.getElementById('prompt');
-    const saveBtn = document.getElementById('save');
+    const systemPromptEl = document.getElementById('system-prompt');
+    const saveSystemPromptBtn = document.getElementById('save-system-prompt');
+    const responseCriteriaEl = document.getElementById('response-criteria');
+    const saveResponseCriteriaBtn = document.getElementById('save-response-criteria');
 
-    async function loadPrompt() {
+    async function loadSystemPrompt() {
       try {
         const res = await fetch('/api/system-prompt');
         const data = await res.json();
-        promptEl.value = data.prompt || '';
+        systemPromptEl.value = data.prompt || '';
       } catch (err) {
-        console.error('Failed to load prompt:', err);
-        promptEl.placeholder = 'Failed to load prompt';
+        console.error('Failed to load system prompt:', err);
+        systemPromptEl.placeholder = 'Failed to load prompt';
       }
     }
 
-    async function savePrompt() {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
+    async function saveSystemPrompt() {
+      saveSystemPromptBtn.disabled = true;
+      saveSystemPromptBtn.textContent = 'Saving...';
       try {
         const res = await fetch('/api/system-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptEl.value })
+          body: JSON.stringify({ prompt: systemPromptEl.value })
         });
         if (res.ok) {
-          alert('Saved!');
+          alert('Persona saved!');
         } else {
           const data = await res.json();
           alert('Error: ' + (data.error || 'Unknown error'));
         }
       } catch (err) {
-        console.error('Failed to save prompt:', err);
-        alert('Failed to save prompt');
+        console.error('Failed to save system prompt:', err);
+        alert('Failed to save system prompt');
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save';
+        saveSystemPromptBtn.disabled = false;
+        saveSystemPromptBtn.textContent = 'Save System Prompt';
       }
     }
 
-    saveBtn.addEventListener('click', savePrompt);
-    loadPrompt();
+    async function loadResponseCriteria() {
+      try {
+        const res = await fetch('/api/response-criteria');
+        const data = await res.json();
+        responseCriteriaEl.value = data.prompt || '';
+      } catch (err) {
+        console.error('Failed to load response criteria:', err);
+        responseCriteriaEl.placeholder = 'Failed to load response criteria';
+      }
+    }
+
+    async function saveResponseCriteria() {
+      saveResponseCriteriaBtn.disabled = true;
+      saveResponseCriteriaBtn.textContent = 'Saving...';
+      try {
+        const res = await fetch('/api/response-criteria', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: responseCriteriaEl.value })
+        });
+        if (res.ok) {
+          alert('Response Criteria saved!');
+        } else {
+          const data = await res.json();
+          alert('Error: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Failed to save response criteria:', err);
+        alert('Failed to save response criteria');
+      } finally {
+        saveResponseCriteriaBtn.disabled = false;
+        saveResponseCriteriaBtn.textContent = 'Save Response Criteria';
+      }
+    }
+
+    saveSystemPromptBtn.addEventListener('click', saveSystemPrompt);
+    saveResponseCriteriaBtn.addEventListener('click', saveResponseCriteria);
+    loadSystemPrompt();
+    loadResponseCriteria();
   </script>
 </body>
 </html>

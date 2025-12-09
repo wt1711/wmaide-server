@@ -7,6 +7,7 @@ import { kv } from '@vercel/kv';
 import {
   createRomanticResponsePrompt_EN,
   DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_RESPONSE_CRITERIA,
 } from './prompts.js';
 import createGradeRoute from './routes/grade.js';
 import createSuggestionRoute from './routes/suggestion.js';
@@ -83,6 +84,31 @@ app.post('/api/system-prompt', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save SYSTEM_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Response Criteria API
+app.get('/api/response-criteria', async (req, res) => {
+  try {
+    const prompt = await kv.get('RESPONSE_CRITERIA');
+    res.json({ prompt: prompt || DEFAULT_RESPONSE_CRITERIA });
+  } catch (error) {
+    console.error('Failed to fetch RESPONSE_CRITERIA from KV:', error);
+    res.json({ prompt: DEFAULT_RESPONSE_CRITERIA });
+  }
+});
+
+app.post('/api/response-criteria', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set('RESPONSE_CRITERIA', prompt);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save RESPONSE_CRITERIA to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
   }
 });

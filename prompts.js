@@ -4,6 +4,14 @@ import { kv } from '@vercel/kv';
 export const DEFAULT_SYSTEM_PROMPT = `You are generating a response to a message in a conversation.
 Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.`;
 
+export const DEFAULT_RESPONSE_CRITERIA = `Create a response that is:
+- Stimulating and attractive
+- Appropriate for the conversation context and the emotion of the original message
+- Uses casual, spoken language
+- Does not exaggerate emotions
+- Creates an emotional response in the other person
+- Short but meaningful`;
+
 export function createConsultationPrompt_EN(
   context,
   selectedMessage,
@@ -49,28 +57,6 @@ export async function createRomanticResponsePrompt_EN(
 
   const conversationHistory = getConversationHistory(context);
 
-  const {
-    filter,
-    spiciness,
-    boldness,
-    thirst,
-    energy,
-    toxicity,
-    humour,
-    emojiUse,
-  } = spec;
-
-  // Define filters
-  const filterMap = {
-    Chad: 'Your persona is Chad: confident, blunt, high-status energy.',
-    Rizz: 'Your persona is Rizz: smooth, wordplay, flirty finesse.',
-    Simp: 'Your persona is Simp: sweet, wholesome, try-hard vibes.',
-    'Main Character':
-      'Your persona is Main Character: dramatic, cinematic, larger-than-life tone.',
-  };
-
-  const selectedFilter = filterMap[filter] || filterMap['Rizz'];
-
   // Fetch system prompt from KV, fallback to default
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
   try {
@@ -82,17 +68,19 @@ export async function createRomanticResponsePrompt_EN(
     console.error('Failed to fetch SYSTEM_PROMPT from KV:', error);
   }
 
-  const prompt = `${selectedFilter}
-${systemPrompt}
+  // Fetch response criteria from KV, fallback to default
+  let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
+  try {
+    const kvCriteria = await kv.get('RESPONSE_CRITERIA');
+    if (kvCriteria) {
+      responseCriteria = kvCriteria;
+    }
+  } catch (error) {
+    console.error('Failed to fetch RESPONSE_CRITERIA from KV:', error);
+  }
 
-Fine-tune the response based on the following sliders (0-100 scale):
-- Spiciness (${spiciness}): 0 is mild teasing, 100 is heavy innuendo.
-- Boldness (${boldness}): 0 is reserved, 100 is alpha assertive.
-- Thirst (${thirst}): 0 is subtle interest, 100 is down bad.
-- Energy (${energy}): 0 is chill, 100 is hype/excited.
-- Toxicity (${toxicity}): 0 is a nice guy, 100 is a villain arc.
-- Humour (${humour}): 0 is dry wit, 100 is full clown.
-- Emoji Use (${emojiUse}): 0 is clean text, 100 is Gen Z emoji spam.
+  const prompt = `
+${systemPrompt}
 
 This is the conversation history:
 ---
@@ -101,13 +89,7 @@ ${conversationHistory}
 
 Message to reply to: "${message}"
 
-Create a response that is:
-- Stimulating and attractive
-- Appropriate for the conversation context and the emotion of the original message
-- Uses casual, spoken language
-- Does not exaggerate emotions
-- Creates an emotional response in the other person
-- Short but meaningful
+${responseCriteria}
 
 Provide only the content of the reply, without any additional explanation.`;
   console.log('prompt', prompt);
