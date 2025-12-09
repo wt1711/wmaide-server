@@ -2,12 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
+import { kv } from '@vercel/kv';
 import {
   createRomanticResponsePrompt_EN,
+  DEFAULT_SYSTEM_PROMPT,
 } from './prompts.js';
 import createGradeRoute from './routes/grade.js';
 import createSuggestionRoute from './routes/suggestion.js';
 import createGenerateResponse2Route from './routes/generate-response2.js';
+import createPreviewPromptRoute from './routes/preview-prompt.js';
 
 dotenv.config();
 
@@ -20,6 +23,7 @@ const openai = new OpenAI({
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
 const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response from OpenAI') => {
   const startTime = Date.now();
@@ -54,7 +58,33 @@ app.use('/api', createSuggestionRoute(callOpenAI));
 // Mount generate-response2 routes
 app.use('/api', createGenerateResponse2Route(callOpenAI));
 
+// Mount preview-prompt routes
+app.use('/api', createPreviewPromptRoute(callOpenAI));
 
+// System Prompt API
+app.get('/api/system-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get('SYSTEM_PROMPT');
+    res.json({ prompt: prompt || DEFAULT_SYSTEM_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch SYSTEM_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_SYSTEM_PROMPT });
+  }
+});
+
+app.post('/api/system-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set('SYSTEM_PROMPT', prompt);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save SYSTEM_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
 
 app.post('/api/generate-response', async (req, res) => {
   const requestStartTime = Date.now();
@@ -70,7 +100,7 @@ app.post('/api/generate-response', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  const prompt = createRomanticResponsePrompt_EN(context, message, spec);
+  const prompt = await createRomanticResponsePrompt_EN(context, message, spec);
   const romanticResponse = await callOpenAI(
     res,
     prompt,

@@ -1,4 +1,8 @@
 import { getConversationHistory } from './utils.js';
+import { kv } from '@vercel/kv';
+
+export const DEFAULT_SYSTEM_PROMPT = `You are generating a response to a message in a conversation.
+Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.`;
 
 export function createConsultationPrompt_EN(
   context,
@@ -28,7 +32,7 @@ ${conversationHistory}
   return prompt;
 }
 
-export function createRomanticResponsePrompt_EN(
+export async function createRomanticResponsePrompt_EN(
   context,
   message,
   spec = {
@@ -68,9 +72,19 @@ export function createRomanticResponsePrompt_EN(
 
   const selectedFilter = filterMap[filter] || filterMap['Rizz'];
 
-  const prompt2 = `${selectedFilter}
-You are generating a response to a message in a conversation.
-Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.
+  // Fetch system prompt from KV, fallback to default
+  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+  try {
+    const kvPrompt = await kv.get('SYSTEM_PROMPT');
+    if (kvPrompt) {
+      systemPrompt = kvPrompt;
+    }
+  } catch (error) {
+    console.error('Failed to fetch SYSTEM_PROMPT from KV:', error);
+  }
+
+  const prompt = `${selectedFilter}
+${systemPrompt}
 
 Fine-tune the response based on the following sliders (0-100 scale):
 - Spiciness (${spiciness}): 0 is mild teasing, 100 is heavy innuendo.
@@ -97,26 +111,6 @@ Create a response that is:
 - Short but meaningful
 
 Provide only the content of the reply, without any additional explanation.`;
-
-const prompt = `Bạn là một chàng bad boy, đang nhắn tin tán tỉnh với một cô gái, tính cách của bạn là tự tin, cuốn hút, có một chút hư và bạo miệng, nhiệm vụ của bạn là đưa ra một câu nói tạo chủ đề mới để cô ấy muốn tiếp tục câu chuyện, câu mở chủ đề nên ngắn gọn, đánh vào cảm xúc đối phương, không dài dòng chi tiết, độ dài dưới 1 câu hoặc 140 chữ:
-Đây là lịch sử cuộc trò chuyện:
----
-${conversationHistory}
----
-
-___
-Tin nhắn của cô ấy: "${message}"
-___
-
-Hãy tạo một câu trả lời:
-- Kích thích và cuốn hút
-- Dùng văn nói thông thường
-- không cường điệu hoá cảm xúc
-- Ngắn gọn nhưng ý nghĩa
-- Thể hiện độ ngầu của bạn, không được sến súa 
-- Càng bí ẩn và cuốn hút càng tốt
-
-Chỉ cung cấp nội dung câu trả lời, không thêm bất kỳ lời giải thích nào.;`
 
   return prompt;
 }
