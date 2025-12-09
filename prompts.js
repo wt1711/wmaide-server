@@ -47,7 +47,6 @@ export async function createRomanticResponsePrompt_EN(
   }
 ) {
 
-  console.log('createRomanticResponsePrompt_EN', context, message, spec);
   const conversationHistory = getConversationHistory(context);
 
   const {
@@ -111,7 +110,7 @@ Create a response that is:
 - Short but meaningful
 
 Provide only the content of the reply, without any additional explanation.`;
-
+  console.log('prompt', prompt);
   return prompt;
 }
 
