@@ -30,10 +30,22 @@ app.use(express.static('public'));
 const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response from OpenAI') => {
   const startTime = Date.now();
   console.log('🚀 Starting OpenAI API call at:', new Date().toISOString());
-  
+
+  // Fetch model from KV, default to gpt-4o-mini
+  let model = 'gpt-4o-mini';
+  try {
+    const kvModel = await kv.get('LLM_MODEL_NAME');
+    if (kvModel) {
+      model = kvModel;
+    }
+  } catch (kvError) {
+    console.error('Failed to fetch LLM_MODEL_NAME from KV, using default:', kvError);
+  }
+  console.log(`📦 Using model: ${model}`);
+
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model,
       messages: [{ role: 'user', content: prompt }],
     });
     
@@ -85,6 +97,33 @@ app.post('/api/system-prompt', async (req, res) => {
   } catch (error) {
     console.error('Failed to save SYSTEM_PROMPT to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// LLM Model API
+const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
+
+app.get('/api/llm-model', async (req, res) => {
+  try {
+    const modelName = await kv.get('LLM_MODEL_NAME');
+    res.json({ modelName: modelName || DEFAULT_LLM_MODEL });
+  } catch (error) {
+    console.error('Failed to fetch LLM_MODEL_NAME from KV:', error);
+    res.json({ modelName: DEFAULT_LLM_MODEL });
+  }
+});
+
+app.post('/api/llm-model', async (req, res) => {
+  try {
+    const { modelName } = req.body;
+    if (!modelName) {
+      return res.status(400).json({ error: 'Missing modelName' });
+    }
+    await kv.set('LLM_MODEL_NAME', modelName);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save LLM_MODEL_NAME to KV:', error);
+    res.status(500).json({ error: 'Failed to save model name' });
   }
 });
 
