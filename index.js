@@ -31,8 +31,8 @@ const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response fr
   const startTime = Date.now();
   console.log('🚀 Starting OpenAI API call at:', new Date().toISOString());
 
-  // Fetch model from KV, default to gpt-4o-mini
-  let model = 'gpt-4o-mini';
+  // Fetch model from KV, default to gpt-4o
+  let model = 'gpt-4o';
   try {
     const kvModel = await kv.get('LLM_MODEL_NAME');
     if (kvModel) {
@@ -101,7 +101,7 @@ app.post('/api/system-prompt', async (req, res) => {
 });
 
 // LLM Model API
-const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
+const DEFAULT_LLM_MODEL = 'gpt-4o';
 
 app.get('/api/llm-model', async (req, res) => {
   try {

@@ -80,9 +80,13 @@
   <div class="section">
     <h2>AI Model Selection</h2>
     <select id="llm-model">
-      <option value="gpt-4o-mini">gpt-4o-mini</option>
+      <option value="o1">o1</option>
+      <option value="o3">o3</option>
+      <option value="o4-mini">o4-mini</option>
+      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+      <option value="gpt-4o">gpt-4o</option>
       <option value="gpt-4.1">gpt-4.1</option>
-      <option value="gpt-5">gpt-5</option>
+      <option value="gpt-5-chat-latest">gpt-5-chat-latest</option>
     </select>
     <br>
     <button id="save-llm-model">Save Model</button>
@@ -127,7 +131,7 @@
       try {
         const res = await fetch('/api/llm-model');
         const data = await res.json();
-        llmModelEl.value = data.modelName || 'gpt-4o-mini';
+        llmModelEl.value = data.modelName || 'gpt-4o';
       } catch (err) {
         console.error('Failed to load LLM model:', err);
       }
