@@ -124,7 +124,7 @@
       align-items: center;
     }
     #version-description-input {
-      width: 200px;
+      width: 600px;
     }
     .version-panel {
       background: white;
@@ -198,8 +198,8 @@
       <div class="header">
         <h1>Prompt Builder</h1>
         <div class="header-actions">
+          <button class="store-btn" id="store-version-btn">Save this version</button>
           <input type="text" id="version-description-input" placeholder="Version description...">
-          <button class="store-btn" id="store-version-btn">Store Version</button>
         </div>
       </div>
 
@@ -404,7 +404,7 @@
         alert('Failed to store version');
       } finally {
         storeVersionBtn.disabled = false;
-        storeVersionBtn.textContent = 'Store Version';
+        storeVersionBtn.textContent = 'Save this version';
       }
     }
 
@@ -414,7 +414,7 @@
         const versions = await res.json();
 
         if (!versions || versions.length === 0) {
-          versionListEl.innerHTML = '<p class="empty-state">No versions stored yet.<br>Use "Store Version" to save a snapshot.</p>';
+          versionListEl.innerHTML = '<p class="empty-state">No versions saved yet.<br>Click "Save this version" to create a snapshot.</p>';
           return;
         }
 
