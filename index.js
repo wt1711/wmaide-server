@@ -9,6 +9,11 @@ import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_RESPONSE_CRITERIA,
 } from './prompts.js';
+import {
+  saveNewVersion,
+  getVersionHistory,
+  deleteVersion,
+} from './promptVersionController.js';
 import createGradeRoute from './routes/grade.js';
 import createSuggestionRoute from './routes/suggestion.js';
 import createGenerateResponse2Route from './routes/generate-response2.js';
@@ -75,6 +80,8 @@ app.use('/api', createGenerateResponse2Route(callOpenAI));
 // Mount preview-prompt routes
 app.use('/api', createPreviewPromptRoute(callOpenAI));
 
+// ============ Individual Config APIs ============
+
 // System Prompt API
 app.get('/api/system-prompt', async (req, res) => {
   try {
@@ -89,7 +96,7 @@ app.get('/api/system-prompt', async (req, res) => {
 app.post('/api/system-prompt', async (req, res) => {
   try {
     const { prompt } = req.body;
-    if (!prompt) {
+    if (prompt === undefined) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
     await kv.set('SYSTEM_PROMPT', prompt);
@@ -116,7 +123,7 @@ app.get('/api/llm-model', async (req, res) => {
 app.post('/api/llm-model', async (req, res) => {
   try {
     const { modelName } = req.body;
-    if (!modelName) {
+    if (modelName === undefined) {
       return res.status(400).json({ error: 'Missing modelName' });
     }
     await kv.set('LLM_MODEL_NAME', modelName);
@@ -141,7 +148,7 @@ app.get('/api/response-criteria', async (req, res) => {
 app.post('/api/response-criteria', async (req, res) => {
   try {
     const { prompt } = req.body;
-    if (!prompt) {
+    if (prompt === undefined) {
       return res.status(400).json({ error: 'Missing prompt' });
     }
     await kv.set('RESPONSE_CRITERIA', prompt);
@@ -149,6 +156,49 @@ app.post('/api/response-criteria', async (req, res) => {
   } catch (error) {
     console.error('Failed to save RESPONSE_CRITERIA to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// ============ Version Snapshot API ============
+
+// POST /api/versions/save - Save current config as a new version snapshot
+app.post('/api/versions/save', async (req, res) => {
+  try {
+    const { description, configData } = req.body;
+
+    const version = await saveNewVersion(configData, description || '');
+    res.json({ success: true, version });
+  } catch (error) {
+    console.error('Failed to save new version:', error);
+    res.status(500).json({ error: 'Failed to save new version' });
+  }
+});
+
+// GET /api/versions/history - Get version history
+app.get('/api/versions/history', async (req, res) => {
+  try {
+    const versions = await getVersionHistory();
+    res.json(versions);
+  } catch (error) {
+    console.error('Failed to get version history:', error);
+    res.status(500).json({ error: 'Failed to get version history' });
+  }
+});
+
+// DELETE /api/versions/:id - Delete a version
+app.delete('/api/versions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteVersion(id);
+
+    if (!result.success) {
+      return res.status(404).json({ error: result.error });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete version:', error);
+    res.status(500).json({ error: 'Failed to delete version' });
   }
 });
 
