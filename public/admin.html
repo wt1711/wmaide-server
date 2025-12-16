@@ -418,18 +418,24 @@
           return;
         }
 
+        // Store version data for lookup
+        window.versionDataMap = {};
+
         let html = '';
         versions.forEach(version => {
           const date = new Date(version.timestamp).toLocaleString();
           const description = version.description || '(No description)';
           const model = version.configData?.LLM_MODEL_NAME || 'N/A';
 
+          // Store config data by ID for safe retrieval
+          window.versionDataMap[version.id] = version.configData;
+
           html += `
             <div class="version-item">
               <div class="version-description">${escapeHtml(description)}</div>
               <div class="version-meta">${date}</div>
               <div class="version-model">Model: ${escapeHtml(model)}</div>
-              <button class="restore-btn" onclick='restoreVersion(${JSON.stringify(version.configData)})'>Restore</button>
+              <button class="restore-btn" onclick="restoreVersionById('${version.id}')">Restore</button>
               <button class="delete-btn" onclick="deleteVersionItem('${version.id}')">Delete</button>
             </div>
           `;
@@ -440,6 +446,15 @@
         console.error('Failed to load version history:', err);
         versionListEl.innerHTML = '<p class="empty-state">Failed to load versions.</p>';
       }
+    }
+
+    function restoreVersionById(versionId) {
+      const configData = window.versionDataMap[versionId];
+      if (!configData) {
+        alert('Version data not found. Please refresh the page.');
+        return;
+      }
+      restoreVersion(configData);
     }
 
     async function restoreVersion(configData) {
