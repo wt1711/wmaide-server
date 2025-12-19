@@ -106,6 +106,33 @@ app.post('/api/llm-model', async (req, res) => {
   }
 });
 
+// LLM Provider API
+const DEFAULT_LLM_PROVIDER = 'openai';
+
+app.get('/api/llm-provider', async (req, res) => {
+  try {
+    const provider = await kv.get('LLM_PROVIDER');
+    res.json({ provider: provider || DEFAULT_LLM_PROVIDER });
+  } catch (error) {
+    console.error('Failed to fetch LLM_PROVIDER from KV:', error);
+    res.json({ provider: DEFAULT_LLM_PROVIDER });
+  }
+});
+
+app.post('/api/llm-provider', async (req, res) => {
+  try {
+    const { provider } = req.body;
+    if (provider === undefined) {
+      return res.status(400).json({ error: 'Missing provider' });
+    }
+    await kv.set('LLM_PROVIDER', provider);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save LLM_PROVIDER to KV:', error);
+    res.status(500).json({ error: 'Failed to save provider' });
+  }
+});
+
 // Response Criteria API
 app.get('/api/response-criteria', async (req, res) => {
   try {

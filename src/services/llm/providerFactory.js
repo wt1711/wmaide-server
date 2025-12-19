@@ -1,7 +1,10 @@
 import openaiProvider from './openaiProvider.js';
+import claudeProvider from './claudeProvider.js';
 
 const providers = {
   openai: openaiProvider,
+  anthropic: claudeProvider,
+  claude: claudeProvider,
 };
 
 export function getProvider(name = 'openai') {

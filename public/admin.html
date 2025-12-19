@@ -18,7 +18,7 @@
       max-width: 1400px;
       margin: 0 auto;
     }
-    .sidebar {
+  .sidebar {
       width: 320px;
       flex-shrink: 0;
     }
@@ -204,21 +204,33 @@
       </div>
 
       <div class="section">
-        <h2>AI Model Selection</h2>
-        <select id="llm-model">
-          <option value="o1">o1</option>
-          <option value="o3">o3</option>
-          <option value="o4-mini">o4-mini</option>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-4.1">gpt-4.1</option>
-          <option value="gpt-5-chat-latest">gpt-5-chat-latest</option>
-          <option value="gpt-5">gpt-5</option>
-          <option value="gpt-5.1">gpt-5.1</option>
-          <option value="gpt-5.2">gpt-5.2</option>
+        <h2>AI Provider & Model Selection</h2>
+        <label for="llm-provider" style="display: block; margin-bottom: 5px; font-weight: 500;">Provider:</label>
+        <select id="llm-provider" style="margin-bottom: 15px;">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic Claude</option>
         </select>
         <br>
-        <button id="save-llm-model" style="margin-top: 10px;">Save Model</button>
+        <label for="llm-model" style="display: block; margin-bottom: 5px; font-weight: 500;">Model:</label>
+        <select id="llm-model">
+          <optgroup label="OpenAI Models">
+            <option value="o1">o1</option>
+            <option value="o3">o3</option>
+            <option value="o4-mini">o4-mini</option>
+            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+            <option value="gpt-4o">gpt-4o</option>
+            <option value="gpt-4.1">gpt-4.1</option>
+            <option value="gpt-5-chat-latest">gpt-5-chat-latest</option>
+            <option value="gpt-5">gpt-5</option>
+            <option value="gpt-5.1">gpt-5.1</option>
+            <option value="gpt-5.2">gpt-5.2</option>
+          </optgroup>
+          <optgroup label="Anthropic Models">
+            <option value="claude-sonnet-4-20250514">claude-sonnet-4</option>
+          </optgroup>
+        </select>
+        <br>
+        <button id="save-llm-model" style="margin-top: 10px;">Save Provider & Model</button>
       </div>
 
       <hr>
@@ -250,6 +262,7 @@
   </div>
 
   <script>
+    const llmProviderEl = document.getElementById('llm-provider');
     const llmModelEl = document.getElementById('llm-model');
     const saveLlmModelBtn = document.getElementById('save-llm-model');
     const systemPromptEl = document.getElementById('system-prompt');
@@ -269,6 +282,44 @@
         llmModelEl.value = data.modelName || 'gpt-4o';
       } catch (err) {
         console.error('Failed to load LLM model:', err);
+      }
+    }
+
+    async function loadLlmProvider() {
+      try {
+        const res = await fetch('/api/llm-provider');
+        const data = await res.json();
+        llmProviderEl.value = data.provider || 'openai';
+        filterModelsByProvider();
+      } catch (err) {
+        console.error('Failed to load LLM provider:', err);
+      }
+    }
+
+    function filterModelsByProvider() {
+      const provider = llmProviderEl.value;
+      const optgroups = llmModelEl.querySelectorAll('optgroup');
+
+      optgroups.forEach(group => {
+        const isOpenAI = group.label === 'OpenAI Models';
+        const isAnthropic = group.label === 'Anthropic Models';
+
+        if (provider === 'openai') {
+          group.style.display = isOpenAI ? '' : 'none';
+          group.querySelectorAll('option').forEach(opt => opt.disabled = !isOpenAI);
+        } else if (provider === 'anthropic') {
+          group.style.display = isAnthropic ? '' : 'none';
+          group.querySelectorAll('option').forEach(opt => opt.disabled = !isAnthropic);
+        }
+      });
+
+      // If current model doesn't match provider, select first valid option
+      const currentOption = llmModelEl.querySelector(`option[value="${llmModelEl.value}"]`);
+      if (currentOption && currentOption.disabled) {
+        const firstEnabled = llmModelEl.querySelector('option:not([disabled])');
+        if (firstEnabled) {
+          llmModelEl.value = firstEnabled.value;
+        }
       }
     }
 
@@ -300,23 +351,29 @@
       saveLlmModelBtn.disabled = true;
       saveLlmModelBtn.textContent = 'Saving...';
       try {
-        const res = await fetch('/api/llm-model', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ modelName: llmModelEl.value })
-        });
-        if (res.ok) {
-          alert('Model saved!');
+        const [modelRes, providerRes] = await Promise.all([
+          fetch('/api/llm-model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelName: llmModelEl.value })
+          }),
+          fetch('/api/llm-provider', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: llmProviderEl.value })
+          })
+        ]);
+        if (modelRes.ok && providerRes.ok) {
+          alert('Provider & Model saved!');
         } else {
-          const data = await res.json();
-          alert('Error: ' + (data.error || 'Unknown error'));
+          alert('Error saving provider or model');
         }
       } catch (err) {
         console.error('Failed to save LLM model:', err);
         alert('Failed to save LLM model');
       } finally {
         saveLlmModelBtn.disabled = false;
-        saveLlmModelBtn.textContent = 'Save Model';
+        saveLlmModelBtn.textContent = 'Save Provider & Model';
       }
     }
 
@@ -379,7 +436,7 @@
           SYSTEM_PROMPT: systemPromptEl.value,
           RESPONSE_CRITERIA: responseCriteriaEl.value,
           LLM_MODEL_NAME: llmModelEl.value,
-          LLM_PROVIDER: 'openai'
+          LLM_PROVIDER: llmProviderEl.value
         };
 
         const res = await fetch('/api/versions/save', {
@@ -463,6 +520,7 @@
       }
 
       // Update form fields
+      llmProviderEl.value = configData.LLM_PROVIDER || 'openai';
       llmModelEl.value = configData.LLM_MODEL_NAME || 'gpt-4o';
       systemPromptEl.value = configData.SYSTEM_PROMPT || '';
       responseCriteriaEl.value = configData.RESPONSE_CRITERIA || '';
@@ -470,6 +528,11 @@
       // Save all fields to KV
       try {
         const results = await Promise.all([
+          fetch('/api/llm-provider', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: configData.LLM_PROVIDER || 'openai' })
+          }),
           fetch('/api/llm-model', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -530,13 +593,15 @@
     // ============ Event Listeners ============
 
     saveLlmModelBtn.addEventListener('click', saveLlmModel);
+    llmProviderEl.addEventListener('change', filterModelsByProvider);
     saveSystemPromptBtn.addEventListener('click', saveSystemPrompt);
     saveResponseCriteriaBtn.addEventListener('click', saveResponseCriteria);
     storeVersionBtn.addEventListener('click', storeVersion);
 
     // ============ Initial Load ============
 
-    loadLlmModel();
+    // Load model first, then provider (which triggers filtering)
+    loadLlmModel().then(() => loadLlmProvider());
     loadSystemPrompt();
     loadResponseCriteria();
     loadVersionHistory();
