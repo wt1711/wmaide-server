@@ -209,6 +209,7 @@
         <select id="llm-provider" style="margin-bottom: 15px;">
           <option value="openai">OpenAI</option>
           <option value="anthropic">Anthropic Claude</option>
+          <option value="xai">xAI Grok</option>
         </select>
         <br>
         <label for="llm-model" style="display: block; margin-bottom: 5px; font-weight: 500;">Model:</label>
@@ -226,7 +227,11 @@
             <option value="gpt-5.2">gpt-5.2</option>
           </optgroup>
           <optgroup label="Anthropic Models">
-            <option value="claude-sonnet-4-20250514">claude-sonnet-4</option>
+            <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514</option>
+          </optgroup>
+          <optgroup label="xAI Grok Models">
+            <option value="grok-4-0709">grok-4-0709</option>
+            <option value="grok-3">grok-3</option>
           </optgroup>
         </select>
         <br>
@@ -303,6 +308,7 @@
       optgroups.forEach(group => {
         const isOpenAI = group.label === 'OpenAI Models';
         const isAnthropic = group.label === 'Anthropic Models';
+        const isXAI = group.label === 'xAI Grok Models';
 
         if (provider === 'openai') {
           group.style.display = isOpenAI ? '' : 'none';
@@ -310,6 +316,9 @@
         } else if (provider === 'anthropic') {
           group.style.display = isAnthropic ? '' : 'none';
           group.querySelectorAll('option').forEach(opt => opt.disabled = !isAnthropic);
+        } else if (provider === 'xai') {
+          group.style.display = isXAI ? '' : 'none';
+          group.querySelectorAll('option').forEach(opt => opt.disabled = !isXAI);
         }
       });
 
