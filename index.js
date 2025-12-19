@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import OpenAI from 'openai';
 import { kv } from '@vercel/kv';
 import {
   createRomanticResponsePrompt_EN,
@@ -18,52 +17,25 @@ import createGradeRoute from './routes/grade.js';
 import createSuggestionRoute from './routes/suggestion.js';
 import createGenerateResponse2Route from './routes/generate-response2.js';
 import createPreviewPromptRoute from './routes/preview-prompt.js';
+import { generateResponse } from './src/services/llmService.js';
 
 dotenv.config();
 
 const app = express();
 const port = 3000;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Wrapper for backward compatibility with existing routes
 const callOpenAI = async (res, prompt, defaultResponse = 'Cannot get response from OpenAI') => {
-  const startTime = Date.now();
-  console.log('🚀 Starting OpenAI API call at:', new Date().toISOString());
-
-  // Fetch model from KV, default to gpt-4o
-  let model = 'gpt-4o';
   try {
-    const kvModel = await kv.get('LLM_MODEL_NAME');
-    if (kvModel) {
-      model = kvModel;
-    }
-  } catch (kvError) {
-    console.error('Failed to fetch LLM_MODEL_NAME from KV, using default:', kvError);
-  }
-  console.log(`📦 Using model: ${model}`);
-
-  try {
-    const response = await openai.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const endTime = Date.now();
-    const duration = endTime - startTime;
-    console.log(`✅ OpenAI API call completed in ${duration}ms (${(duration/1000).toFixed(2)}s)`);
-    
-    return response.choices[0].message.content || defaultResponse;
+    const response = await generateResponse(prompt);
+    return response || defaultResponse;
   } catch (error) {
-    const endTime = Date.now();
-    const duration = endTime - startTime;
-    console.error(`❌ OpenAI API call failed after ${duration}ms (${(duration/1000).toFixed(2)}s):`, error);
-    res.status(500).json({ error: 'Error from OpenAI' });
+    console.error('LLM call failed:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
     return null;
   }
 };
@@ -205,7 +177,7 @@ app.delete('/api/versions/:id', async (req, res) => {
 app.post('/api/generate-response', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting /api/generate-response request at:', new Date().toISOString());
-  
+
   const { context, message, spec } = req.body;
 
   if (!context) {
@@ -216,23 +188,23 @@ app.post('/api/generate-response', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  const prompt = await createRomanticResponsePrompt_EN(context, message, spec);
-  const romanticResponse = await callOpenAI(
-    res,
-    prompt,
-  );
-  
-  if (romanticResponse) {
+  try {
+    const prompt = await createRomanticResponsePrompt_EN(context, message, spec);
+    const romanticResponse = await generateResponse(prompt);
+
     const requestEndTime = Date.now();
     const totalDuration = requestEndTime - requestStartTime;
     console.log(`🎯 Total request time: ${totalDuration}ms (${(totalDuration/1000).toFixed(2)}s)`);
-    res.json({ 
-      response: romanticResponse,
+    res.json({
+      response: romanticResponse || 'Cannot get response from LLM',
       timing: {
         totalDuration: totalDuration,
         totalDurationSeconds: (totalDuration/1000).toFixed(2)
       }
     });
+  } catch (error) {
+    console.error('Failed to generate response:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
   }
 });
 
