@@ -4,10 +4,9 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 
 // Route imports
-import gradeRouter from './routes/grade.js';
-import suggestionRouter from './routes/suggestion.js';
-import generateResponse2Router from './routes/generate-response2.js';
-import previewPromptRouter from './routes/preview-prompt.js';
+import gradeRouter from './src/routes/grade.js';
+import suggestionRouter from './src/routes/suggestion.js';
+import previewPromptRouter from './src/routes/previewPrompt.js';
 import configRouter from './src/routes/config.js';
 import versionsRouter from './src/routes/versions.js';
 import generateRouter from './src/routes/generate.js';
@@ -27,7 +26,6 @@ app.use(express.static('public'));
 // API Routes
 app.use('/api', gradeRouter);
 app.use('/api', suggestionRouter);
-app.use('/api', generateResponse2Router);
 app.use('/api', previewPromptRouter);
 app.use('/api', configRouter);
 app.use('/api/versions', versionsRouter);

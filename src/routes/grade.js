@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { createGradeResponsePrompt_EN } from '../prompts.js';
-import { generateResponse } from '../src/services/llmService.js';
+import { createGradeResponsePrompt_EN } from '../prompts/index.js';
+import { generateResponse } from '../services/llmService.js';
 
 const router = Router();
 

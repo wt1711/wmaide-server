@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { createConsultationPrompt_EN } from '../prompts.js';
-import { generateResponse } from '../src/services/llmService.js';
+import { createConsultationPrompt_EN } from '../prompts/index.js';
+import { generateResponse } from '../services/llmService.js';
 
 const router = Router();
 

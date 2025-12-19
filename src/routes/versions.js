@@ -3,7 +3,7 @@ import {
   saveNewVersion,
   getVersionHistory,
   deleteVersion,
-} from '../../promptVersionController.js';
+} from '../services/versionService.js';
 
 const router = Router();
 

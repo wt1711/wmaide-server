@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateResponse } from '../src/services/llmService.js';
+import { generateResponse } from '../services/llmService.js';
 
 const router = Router();
 

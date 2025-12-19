@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { kv } from '@vercel/kv';
-import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../../prompts.js';
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 
 const router = Router();

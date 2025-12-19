@@ -1,5 +1,11 @@
-import { getConversationHistory } from './utils.js';
 import { kv } from '@vercel/kv';
+import { KV_KEYS } from '../config/index.js';
+
+function getConversationHistory(context) {
+  return context
+    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
+    .join('\n');
+}
 
 export const DEFAULT_SYSTEM_PROMPT = `You are generating a response to a message in a conversation.
 Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.`;
@@ -12,11 +18,7 @@ export const DEFAULT_RESPONSE_CRITERIA = `Create a response that is:
 - Creates an emotional response in the other person
 - Short but meaningful`;
 
-export function createConsultationPrompt_EN(
-  context,
-  selectedMessage,
-  question
-) {
+export function createConsultationPrompt_EN(context, selectedMessage, question) {
   const conversationHistory = getConversationHistory(context);
 
   let prompt = `You are an expert in flirting and women's psychology. Your task is to advise the user on the other person's psychology in the story based on the selected context, how the other person perceives the user based on the context, and how to successfully achieve the dating goals set by the user. Your personality is frank, humorous, and slightly sarcastic. You will answer concisely, to the point, without going into too much detail unless requested, and be honest with the user about the actual situation instead of coddling their feelings.
@@ -54,13 +56,12 @@ export async function createRomanticResponsePrompt_EN(
     emojiUse: 50,
   }
 ) {
-
   const conversationHistory = getConversationHistory(context);
 
   // Fetch system prompt from KV, fallback to default
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
   try {
-    const kvPrompt = await kv.get('SYSTEM_PROMPT');
+    const kvPrompt = await kv.get(KV_KEYS.systemPrompt);
     if (kvPrompt) {
       systemPrompt = kvPrompt;
     }
@@ -71,7 +72,7 @@ export async function createRomanticResponsePrompt_EN(
   // Fetch response criteria from KV, fallback to default
   let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
   try {
-    const kvCriteria = await kv.get('RESPONSE_CRITERIA');
+    const kvCriteria = await kv.get(KV_KEYS.responseCriteria);
     if (kvCriteria) {
       responseCriteria = kvCriteria;
     }

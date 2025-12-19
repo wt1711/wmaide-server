@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRomanticResponsePrompt_EN } from '../../prompts.js';
+import { createRomanticResponsePrompt_EN } from '../prompts/index.js';
 import { generateResponse } from '../services/llmService.js';
 
 const router = Router();

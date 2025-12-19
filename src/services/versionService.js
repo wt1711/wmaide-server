@@ -1,21 +1,16 @@
 import { kv } from '@vercel/kv';
+import { DEFAULTS, KV_KEYS } from '../config/index.js';
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
 
 // KV Key for storing versions
 const VERSIONS_KEY = 'PROMPT_VERSIONS';
 
-// Default values (used by prompts.js)
+// Default configuration for version snapshots
 export const DEFAULT_CONFIG = {
-  SYSTEM_PROMPT: `You are generating a response to a message in a conversation.
-Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.`,
-  RESPONSE_CRITERIA: `Create a response that is:
-- Stimulating and attractive
-- Appropriate for the conversation context and the emotion of the original message
-- Uses casual, spoken language
-- Does not exaggerate emotions
-- Creates an emotional response in the other person
-- Short but meaningful`,
-  LLM_MODEL_NAME: 'gpt-4o',
-  LLM_PROVIDER: 'openai',
+  SYSTEM_PROMPT: DEFAULT_SYSTEM_PROMPT,
+  RESPONSE_CRITERIA: DEFAULT_RESPONSE_CRITERIA,
+  LLM_MODEL_NAME: DEFAULTS.llmModel,
+  LLM_PROVIDER: DEFAULTS.llmProvider,
 };
 
 /**
