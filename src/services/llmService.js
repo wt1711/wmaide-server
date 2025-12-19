@@ -1,15 +1,13 @@
 import { kv } from '@vercel/kv';
-import { getProvider } from './llm/providerFactory.js';
-
-const DEFAULT_MODEL = 'gpt-4o';
-const DEFAULT_PROVIDER = 'openai';
+import { generateWithErrorHandling } from './llm/providerFactory.js';
+import { DEFAULTS, KV_KEYS } from '../config/index.js';
 
 async function getConfig() {
-  let model = DEFAULT_MODEL;
-  let provider = DEFAULT_PROVIDER;
+  let model = DEFAULTS.llmModel;
+  let provider = DEFAULTS.llmProvider;
 
   try {
-    const kvModel = await kv.get('LLM_MODEL_NAME');
+    const kvModel = await kv.get(KV_KEYS.llmModelName);
     if (kvModel) {
       model = kvModel;
     }
@@ -18,7 +16,7 @@ async function getConfig() {
   }
 
   try {
-    const kvProvider = await kv.get('LLM_PROVIDER');
+    const kvProvider = await kv.get(KV_KEYS.llmProvider);
     if (kvProvider) {
       provider = kvProvider;
     }
@@ -29,8 +27,13 @@ async function getConfig() {
   return { model, provider };
 }
 
+/**
+ * Generate a response from the configured LLM provider
+ * @param {string} prompt - The prompt to send
+ * @returns {Promise<Object>} Standardized response object with text, usage, provider, durationMs
+ *                           or error object with error, status, provider, durationMs
+ */
 export async function generateResponse(prompt) {
   const config = await getConfig();
-  const llmProvider = getProvider(config.provider);
-  return llmProvider.generate(config, prompt);
+  return generateWithErrorHandling(config.provider, config, prompt);
 }

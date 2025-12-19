@@ -1,32 +1,33 @@
-import express from 'express';
+import { Router } from 'express';
 import { createRomanticResponsePrompt_EN } from '../prompts.js';
+import { generateResponse } from '../src/services/llmService.js';
 
-const router = express.Router();
+const router = Router();
 
-// Helper function to call OpenAI (will be passed from main app)
-const createGenerateResponse2Route = (callOpenAI) => {
-  router.post('/generate-response2', async (req, res) => {
-    const { context, message, spec } = req.body;
+router.post('/generate-response2', async (req, res) => {
+  const { context, message, spec } = req.body;
 
-    if (!context) {
-      return res.status(400).json({ error: 'Missing context' });
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
+  }
+
+  try {
+    const prompt = await createRomanticResponsePrompt_EN(context, message, spec);
+    const result = await generateResponse(prompt);
+
+    if (result.error) {
+      return res.status(result.status || 500).json({ error: result.error });
     }
 
-    if (!message) {
-      return res.status(400).json({ error: 'Missing message' });
-    }
+    res.json({ response: result.text || '' });
+  } catch (error) {
+    console.error('Failed to generate response:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
+  }
+});
 
-    const prompt = createRomanticResponsePrompt_EN(context, message, spec);
-    const romanticResponse = await callOpenAI(
-      res,
-      prompt,
-    );
-    if (romanticResponse) {
-      res.json({ response: romanticResponse });
-    }
-  });
-
-  return router;
-};
-
-export default createGenerateResponse2Route;
+export default router;

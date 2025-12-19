@@ -1,35 +1,35 @@
-import express from 'express';
+import { Router } from 'express';
 import { createGradeResponsePrompt_EN } from '../prompts.js';
+import { generateResponse } from '../src/services/llmService.js';
 
-const router = express.Router();
+const router = Router();
 
-// Helper function to call OpenAI (will be passed from main app)
-const createGradeRoute = (callOpenAI) => {
-  router.post('/grade-response', async (req, res) => {
-    const { context, response } = req.body;
+router.post('/grade-response', async (req, res) => {
+  const { context, response } = req.body;
 
-    if (!context) {
-      return res.status(400).json({ error: 'Missing context' });
-    }
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
 
-    if (!response) {
-      return res.status(400).json({ error: 'Missing response to grade' });
-    }
+  if (!response) {
+    return res.status(400).json({ error: 'Missing response to grade' });
+  }
 
+  try {
     const prompt = createGradeResponsePrompt_EN(context, response);
-    const gradeText = await callOpenAI(res, prompt, '0');
+    const result = await generateResponse(prompt);
 
-    if (gradeText) {
-      const grade = parseInt(gradeText.trim(), 10);
-      if (isNaN(grade)) {
-        res.json({ grade: 0 });
-      } else {
-        res.json({ grade });
-      }
+    if (result.error) {
+      return res.status(result.status || 500).json({ error: result.error });
     }
-  });
 
-  return router;
-};
+    const gradeText = result.text || '0';
+    const grade = parseInt(gradeText.trim(), 10);
+    res.json({ grade: isNaN(grade) ? 0 : grade });
+  } catch (error) {
+    console.error('Failed to grade response:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
+  }
+});
 
-export default createGradeRoute;
+export default router;

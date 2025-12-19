@@ -1,26 +1,31 @@
-import express from 'express';
+import { Router } from 'express';
+import { generateResponse } from '../src/services/llmService.js';
 
-const router = express.Router();
+const router = Router();
 
-const createPreviewPromptRoute = (callOpenAI) => {
-  router.post('/preview-prompt', async (req, res) => {
-    const { prompt } = req.body;
+router.post('/preview-prompt', async (req, res) => {
+  const { prompt } = req.body;
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Missing prompt' });
+  if (!prompt) {
+    return res.status(400).json({ error: 'Missing prompt' });
+  }
+
+  if (typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Prompt must be a string' });
+  }
+
+  try {
+    const result = await generateResponse(prompt);
+
+    if (result.error) {
+      return res.status(result.status || 500).json({ error: result.error });
     }
 
-    if (typeof prompt !== 'string') {
-      return res.status(400).json({ error: 'Prompt must be a string' });
-    }
+    res.json({ response: result.text || '' });
+  } catch (error) {
+    console.error('Failed to preview prompt:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
+  }
+});
 
-    const response = await callOpenAI(res, prompt);
-    if (response) {
-      res.json({ response });
-    }
-  });
-
-  return router;
-};
-
-export default createPreviewPromptRoute;
+export default router;

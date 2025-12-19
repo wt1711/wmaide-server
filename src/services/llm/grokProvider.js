@@ -1,28 +1,23 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
+import BaseProvider from './baseProvider.js';
+import { API_KEYS, PROVIDER_URLS } from '../../config/index.js';
 
-dotenv.config();
+class GrokProvider extends BaseProvider {
+  constructor() {
+    super('xai');
+  }
 
-let grokClient = null;
-
-function getClient() {
-  if (!grokClient) {
-    grokClient = new OpenAI({
-      apiKey: process.env.XAI_API_KEY,
-      baseURL: 'https://api.x.ai/v1',
+  initClient() {
+    return new OpenAI({
+      apiKey: API_KEYS.xai,
+      baseURL: PROVIDER_URLS.xai,
     });
   }
-  return grokClient;
-}
-
-const grokProvider = {
-  name: 'xai',
 
   async generate(config, prompt) {
-    const client = getClient();
+    const client = this.getClient();
     const startTime = Date.now();
-    console.log('🚀 Starting xAI Grok API call at:', new Date().toISOString());
-    console.log(`📦 Using model: ${config.model}`);
+    this.logStart(config.model);
 
     try {
       const response = await client.chat.completions.create({
@@ -30,18 +25,25 @@ const grokProvider = {
         messages: [{ role: 'user', content: prompt }],
       });
 
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      console.log(`✅ xAI Grok API call completed in ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
+      const durationMs = Date.now() - startTime;
+      this.logSuccess(durationMs);
 
-      return response.choices[0].message.content || null;
+      const text = response.choices[0].message.content || '';
+      const usage = response.usage
+        ? {
+            promptTokens: response.usage.prompt_tokens || 0,
+            completionTokens: response.usage.completion_tokens || 0,
+            totalTokens: response.usage.total_tokens || 0,
+          }
+        : null;
+
+      return this.createResponse(text, usage, durationMs);
     } catch (error) {
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      console.error(`❌ xAI Grok API call failed after ${duration}ms (${(duration / 1000).toFixed(2)}s):`, error);
+      const durationMs = Date.now() - startTime;
+      this.logError(durationMs, error);
       throw error;
     }
-  },
-};
+  }
+}
 
-export default grokProvider;
+export default new GrokProvider();
