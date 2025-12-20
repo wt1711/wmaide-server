@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { kv } from '@vercel/kv';
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
+import { PROVIDERS } from '../config/models.js';
 
 const router = Router();
 
@@ -103,6 +104,11 @@ router.post('/response-criteria', async (req, res) => {
     console.error('Failed to save RESPONSE_CRITERIA to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
   }
+});
+
+// Available Models API
+router.get('/models', (req, res) => {
+  res.json(PROVIDERS);
 });
 
 export default router;

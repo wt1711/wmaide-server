@@ -207,39 +207,11 @@
         <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
           <div>
             <label for="llm-provider" style="display: block; margin-bottom: 5px; font-weight: 500;">Provider:</label>
-            <select id="llm-provider">
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="xai">xAI Grok</option>
-            </select>
+            <select id="llm-provider"></select>
           </div>
           <div>
             <label for="llm-model" style="display: block; margin-bottom: 5px; font-weight: 500;">Model:</label>
-            <select id="llm-model">
-              <optgroup label="OpenAI Models">
-                <option value="o1">o1</option>
-                <option value="o3">o3</option>
-                <option value="o4-mini">o4-mini</option>
-                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                <option value="gpt-4o">gpt-4o</option>
-                <option value="gpt-4.1">gpt-4.1</option>
-                <option value="gpt-5-chat-latest">gpt-5-chat-latest</option>
-                <option value="gpt-5">gpt-5</option>
-                <option value="gpt-5.1">gpt-5.1</option>
-                <option value="gpt-5.2">gpt-5.2</option>
-              </optgroup>
-              <optgroup label="Anthropic Models">
-                <option value="claude-sonnet-4-20250514">claude-sonnet-4-20250514</option>
-                <option value="claude-sonnet-4-5-20250929">claude-sonnet-4-5-20250929</option>
-                <option value="claude-opus-4-5-20251101">claude-opus-4-5-20251101</option>
-                <option value="claude-haiku-4-5-20251001">claude-haiku-4-5-20251001</option>    
-              </optgroup>
-              <optgroup label="xAI Grok Models">
-                <option value="grok-4-0709">grok-4-0709</option>
-                <option value="grok-4-1-fast-reasoning">grok-4-1-fast-reasoning</option>
-                <option value="grok-3">grok-3</option>
-              </optgroup>
-            </select>
+            <select id="llm-model"></select>
           </div>
           <button id="save-llm-model">Save Provider & Model</button>
         </div>
@@ -285,6 +257,43 @@
     const storeVersionBtn = document.getElementById('store-version-btn');
     const versionListEl = document.getElementById('version-list');
 
+    // ============ Models Data ============
+
+    let providersData = [];
+
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models');
+        providersData = await res.json();
+        populateProviders();
+      } catch (err) {
+        console.error('Failed to load models:', err);
+      }
+    }
+
+    function populateProviders() {
+      llmProviderEl.innerHTML = '';
+      providersData.forEach(provider => {
+        const option = document.createElement('option');
+        option.value = provider.id;
+        option.textContent = provider.name;
+        llmProviderEl.appendChild(option);
+      });
+    }
+
+    function populateModelsForProvider(providerId) {
+      const provider = providersData.find(p => p.id === providerId);
+      llmModelEl.innerHTML = '';
+      if (provider) {
+        provider.models.forEach(model => {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.textContent = model.id;
+          llmModelEl.appendChild(option);
+        });
+      }
+    }
+
     // ============ Load Individual Configs ============
 
     async function loadLlmModel() {
@@ -302,41 +311,14 @@
         const res = await fetch('/api/llm-provider');
         const data = await res.json();
         llmProviderEl.value = data.provider || 'openai';
-        filterModelsByProvider();
+        populateModelsForProvider(llmProviderEl.value);
       } catch (err) {
         console.error('Failed to load LLM provider:', err);
       }
     }
 
-    function filterModelsByProvider() {
-      const provider = llmProviderEl.value;
-      const optgroups = llmModelEl.querySelectorAll('optgroup');
-
-      optgroups.forEach(group => {
-        const isOpenAI = group.label === 'OpenAI Models';
-        const isAnthropic = group.label === 'Anthropic Models';
-        const isXAI = group.label === 'xAI Grok Models';
-
-        if (provider === 'openai') {
-          group.style.display = isOpenAI ? '' : 'none';
-          group.querySelectorAll('option').forEach(opt => opt.disabled = !isOpenAI);
-        } else if (provider === 'anthropic') {
-          group.style.display = isAnthropic ? '' : 'none';
-          group.querySelectorAll('option').forEach(opt => opt.disabled = !isAnthropic);
-        } else if (provider === 'xai') {
-          group.style.display = isXAI ? '' : 'none';
-          group.querySelectorAll('option').forEach(opt => opt.disabled = !isXAI);
-        }
-      });
-
-      // If current model doesn't match provider, select first valid option
-      const currentOption = llmModelEl.querySelector(`option[value="${llmModelEl.value}"]`);
-      if (currentOption && currentOption.disabled) {
-        const firstEnabled = llmModelEl.querySelector('option:not([disabled])');
-        if (firstEnabled) {
-          llmModelEl.value = firstEnabled.value;
-        }
-      }
+    function onProviderChange() {
+      populateModelsForProvider(llmProviderEl.value);
     }
 
     async function loadSystemPrompt() {
@@ -609,15 +591,17 @@
     // ============ Event Listeners ============
 
     saveLlmModelBtn.addEventListener('click', saveLlmModel);
-    llmProviderEl.addEventListener('change', filterModelsByProvider);
+    llmProviderEl.addEventListener('change', onProviderChange);
     saveSystemPromptBtn.addEventListener('click', saveSystemPrompt);
     saveResponseCriteriaBtn.addEventListener('click', saveResponseCriteria);
     storeVersionBtn.addEventListener('click', storeVersion);
 
     // ============ Initial Load ============
 
-    // Load model first, then provider (which triggers filtering)
-    loadLlmModel().then(() => loadLlmProvider());
+    // Load models first, then provider and model settings
+    loadModels().then(() => {
+      loadLlmProvider().then(() => loadLlmModel());
+    });
     loadSystemPrompt();
     loadResponseCriteria();
     loadVersionHistory();
