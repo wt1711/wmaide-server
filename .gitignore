@@ -5,3 +5,4 @@ node_modules
 .bmade-core
 .claude
 .cursor
+.DS_Store
