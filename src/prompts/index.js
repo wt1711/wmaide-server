@@ -1,10 +1,70 @@
 import { kv } from '@vercel/kv';
 import { KV_KEYS } from '../config/index.js';
 
-function getConversationHistory(context) {
-  return context
-    .map((msg) => `${msg.is_from_me ? 'You' : 'Them'}: ${msg.text}`)
-    .join('\n');
+/**
+ * Check if two messages are from the same sender
+ * @param {Object} msg1 - First message
+ * @param {Object} msg2 - Second message
+ * @returns {boolean} True if same sender
+ */
+function isSameSender(msg1, msg2) {
+  return msg1.is_from_me === msg2.is_from_me;
+}
+
+/**
+ * Group consecutive messages from the same sender into turns
+ * @param {Array} messages - Array of message objects with is_from_me and text
+ * @returns {Array} Array of turn objects { is_from_me, messages[] }
+ */
+function groupMessagesIntoTurns(messages) {
+  const turns = [];
+  let currentTurn = null;
+
+  for (const msg of messages) {
+    const lastMsg = currentTurn?.messages.at(-1);
+    if (!currentTurn || !isSameSender(lastMsg, msg)) {
+      currentTurn = { is_from_me: msg.is_from_me, messages: [msg] };
+      turns.push(currentTurn);
+    } else {
+      currentTurn.messages.push(msg);
+    }
+  }
+
+  return turns;
+}
+
+/**
+ * Format a single message to display string
+ * @param {Object} msg - Message object with is_from_me and text
+ * @returns {string} Formatted message string
+ */
+function formatMessage(msg) {
+  return `${msg.is_from_me ? 'You' : 'Her'}: ${msg.text}`;
+}
+
+/**
+ * Format an array of turns into a conversation string
+ * @param {Array} turns - Array of turn objects
+ * @returns {string} Formatted conversation string
+ */
+function formatTurns(turns) {
+  return turns.flatMap((turn) => turn.messages.map(formatMessage)).join('\n');
+}
+
+/**
+ * Get formatted conversation history, limited to last N turns
+ * @param {Array} context - Array of message objects
+ * @param {number} maxTurns - Maximum number of turns to include
+ * @returns {string} Formatted conversation history
+ */
+function getConversationHistory(context, maxTurns = 10) {
+  if (!context || context.length === 0) {
+    return '';
+  }
+
+  const turns = groupMessagesIntoTurns(context);
+  const recentTurns = turns.slice(-maxTurns);
+  return formatTurns(recentTurns);
 }
 
 export const DEFAULT_SYSTEM_PROMPT = `You are generating a response to a message in a conversation.
