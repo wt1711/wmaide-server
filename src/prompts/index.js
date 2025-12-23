@@ -143,7 +143,11 @@ export async function createRomanticResponsePrompt_EN(
   const prompt = `
 ${systemPrompt}
 
-This is the conversation history:
+This is the very last 10 turns of our conversation context.
+
+Previously sent messages are labelled by sender either [You:] or [Her:] 
+
+[context]
 ---
 ${conversationHistory}
 ---
