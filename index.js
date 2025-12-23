@@ -10,6 +10,7 @@ import previewPromptRouter from './src/routes/previewPrompt.js';
 import configRouter from './src/routes/config.js';
 import versionsRouter from './src/routes/versions.js';
 import generateRouter from './src/routes/generate.js';
+import promptPreviewRouter from './src/routes/promptPreview.js';
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +31,7 @@ app.use('/api', previewPromptRouter);
 app.use('/api', configRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api', generateRouter);
+app.use('/api', promptPreviewRouter);
 
 // Static file routes
 app.get('/admin.html', (req, res) => {

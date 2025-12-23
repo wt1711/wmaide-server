@@ -124,7 +124,7 @@
       align-items: center;
     }
     #version-description-input {
-      width: 600px;
+      width: 300px;
     }
     .version-panel {
       background: white;
@@ -178,6 +178,70 @@
       display: flex;
       gap: 10px;
       margin-top: 10px;
+    }
+    /* Right Sidebar - Prompt Preview */
+    .right-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+    }
+    .prompt-toggle-container {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+    .prompt-toggle-container .prompt-toggle-btn {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .toggle-hint {
+      margin: 10px 0 0 0;
+      font-size: 12px;
+      color: #888;
+    }
+    .prompt-panel {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      position: sticky;
+      top: 20px;
+    }
+    .prompt-panel h3 {
+      margin-top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .prompt-panel .close-btn {
+      background: red;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    #refresh-prompt-btn {
+      background-color: green;
+    }
+    .prompt-content {
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    button.prompt-toggle-btn {
+      background: #6f42c1;
+    }
+    button.prompt-toggle-btn:hover {
+      background: #5a32a3;
     }
   </style>
 </head>
@@ -248,6 +312,29 @@
         <button id="save-response-criteria">Save Response Criteria</button>
       </div>
     </div>
+
+    <!-- Right Sidebar: Prompt Preview -->
+    <div class="right-sidebar" id="right-sidebar">
+      <!-- Toggle Button (shown when LOG_PROMPT is off) -->
+      <div class="prompt-toggle-container" id="prompt-toggle-container">
+        <button class="prompt-toggle-btn" id="show-prompt-btn">SHOW PROMPT</button>
+        <p class="toggle-hint">Click to enable prompt logging</p>
+      </div>
+
+      <!-- Preview Panel (shown when LOG_PROMPT is on) -->
+      <div class="prompt-panel" id="prompt-panel" style="display: none;">
+        <h3>
+          <span>Full Prompt</span>
+          <div>
+            <button class="restore-btn" id="refresh-prompt-btn">Refresh</button>
+            <button class="close-btn" id="close-prompt-btn">Close</button>
+          </div>
+        </h3>
+        <div class="prompt-content" id="prompt-content">
+          Generate a response and click refresh to see full prompt
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -262,6 +349,15 @@
     const versionDescriptionInput = document.getElementById('version-description-input');
     const storeVersionBtn = document.getElementById('store-version-btn');
     const versionListEl = document.getElementById('version-list');
+    const showPromptBtn = document.getElementById('show-prompt-btn');
+    const closePromptBtn = document.getElementById('close-prompt-btn');
+    const refreshPromptBtn = document.getElementById('refresh-prompt-btn');
+    const promptToggleContainer = document.getElementById('prompt-toggle-container');
+    const promptPanel = document.getElementById('prompt-panel');
+    const promptContentEl = document.getElementById('prompt-content');
+
+    // LOG_PROMPT flag - synced with KV
+    let LOG_PROMPT = false;
 
     // ============ Models Data ============
 
@@ -606,6 +702,92 @@
       return div.innerHTML;
     }
 
+    // ============ Prompt Preview ============
+
+    async function loadLogPromptStatus() {
+      try {
+        const res = await fetch('/api/log-prompt');
+        const data = await res.json();
+        LOG_PROMPT = data.enabled;
+        updatePromptUI();
+      } catch (err) {
+        console.error('Failed to load LOG_PROMPT status:', err);
+      }
+    }
+
+    async function enableLogPrompt() {
+      showPromptBtn.disabled = true;
+      showPromptBtn.textContent = 'Enabling...';
+
+      try {
+        const res = await fetch('/api/log-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: true })
+        });
+
+        if (res.ok) {
+          LOG_PROMPT = true;
+          updatePromptUI();
+          loadFullPrompt();
+        }
+      } catch (err) {
+        console.error('Failed to enable LOG_PROMPT:', err);
+      } finally {
+        showPromptBtn.disabled = false;
+        showPromptBtn.textContent = 'SHOW PROMPT';
+      }
+    }
+
+    async function disableLogPrompt() {
+      closePromptBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/log-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: false })
+        });
+
+        if (res.ok) {
+          LOG_PROMPT = false;
+          updatePromptUI();
+        }
+      } catch (err) {
+        console.error('Failed to disable LOG_PROMPT:', err);
+      } finally {
+        closePromptBtn.disabled = false;
+      }
+    }
+
+    function updatePromptUI() {
+      if (LOG_PROMPT) {
+        promptToggleContainer.style.display = 'none';
+        promptPanel.style.display = 'block';
+      } else {
+        promptToggleContainer.style.display = 'block';
+        promptPanel.style.display = 'none';
+      }
+    }
+
+    async function loadFullPrompt() {
+      promptContentEl.textContent = 'Loading...';
+
+      try {
+        const res = await fetch('/api/full-prompt-preview');
+        const data = await res.json();
+
+        if (res.ok) {
+          promptContentEl.textContent = data.prompt || data.message || 'No prompt stored yet.';
+        } else {
+          promptContentEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+        }
+      } catch (err) {
+        console.error('Failed to load prompt preview:', err);
+        promptContentEl.textContent = 'Failed to load prompt preview';
+      }
+    }
+
     // ============ Event Listeners ============
 
     saveLlmModelBtn.addEventListener('click', saveLlmModel);
@@ -614,6 +796,9 @@
     saveSystemPromptBtn.addEventListener('click', saveSystemPrompt);
     saveResponseCriteriaBtn.addEventListener('click', saveResponseCriteria);
     storeVersionBtn.addEventListener('click', storeVersion);
+    showPromptBtn.addEventListener('click', enableLogPrompt);
+    closePromptBtn.addEventListener('click', disableLogPrompt);
+    refreshPromptBtn.addEventListener('click', loadFullPrompt);
 
     // ============ Initial Load ============
 
@@ -624,6 +809,7 @@
     loadSystemPrompt();
     loadResponseCriteria();
     loadVersionHistory();
+    loadLogPromptStatus();
   </script>
 </body>
 </html>

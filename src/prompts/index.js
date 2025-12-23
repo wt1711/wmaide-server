@@ -145,7 +145,7 @@ ${systemPrompt}
 
 This is the very last 10 turns of our conversation context.
 
-Previously sent messages are labelled by sender either [You:] or [Her:] 
+Previously sent messages are labelled by sender either [You:] or [Her:]
 
 [context]
 ---
@@ -157,7 +157,21 @@ Message to reply to: "${message}"
 ${responseCriteria}
 
 Provide only the content of the reply, without any additional explanation.`;
-  console.log('prompt', prompt);
+
+  // Check if LOG_PROMPT is enabled and store the prompt
+  try {
+    const logPromptEnabled = await kv.get(KV_KEYS.logPrompt);
+    if (logPromptEnabled) {
+      await kv.set(KV_KEYS.currentFullPrompt, {
+        prompt,
+        timestamp: new Date().toISOString(),
+        message,
+      });
+    }
+  } catch (error) {
+    console.error('Failed to store prompt in KV:', error);
+  }
+
   return prompt;
 }
 

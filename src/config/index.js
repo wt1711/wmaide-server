@@ -32,6 +32,8 @@ export const KV_KEYS = {
   llmProvider: 'LLM_PROVIDER',
   responseCriteria: 'RESPONSE_CRITERIA',
   versionList: 'VERSION_LIST',
+  logPrompt: 'LOG_PROMPT',
+  currentFullPrompt: 'CURRENT_FULL_PROMPT',
 };
 
 // Provider API Base URLs
