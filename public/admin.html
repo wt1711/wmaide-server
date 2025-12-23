@@ -333,6 +333,11 @@
         <div class="prompt-content" id="prompt-content">
           Generate a response and click refresh to see full prompt
         </div>
+
+        <h4 style="margin-top: 15px; margin-bottom: 8px; color: #666;">Model Analysis</h4>
+        <div class="prompt-content" id="analysis-content" style="background: #2d2d2d; max-height: 200px;">
+          Analysis will appear here after generating a response
+        </div>
       </div>
     </div>
   </div>
@@ -355,6 +360,7 @@
     const promptToggleContainer = document.getElementById('prompt-toggle-container');
     const promptPanel = document.getElementById('prompt-panel');
     const promptContentEl = document.getElementById('prompt-content');
+    const analysisContentEl = document.getElementById('analysis-content');
 
     // LOG_PROMPT flag - synced with KV
     let LOG_PROMPT = false;
@@ -772,19 +778,33 @@
 
     async function loadFullPrompt() {
       promptContentEl.textContent = 'Loading...';
+      analysisContentEl.textContent = 'Loading...';
 
+      // Fetch prompt and analysis in parallel
       try {
-        const res = await fetch('/api/full-prompt-preview');
-        const data = await res.json();
+        const [promptRes, analysisRes] = await Promise.all([
+          fetch('/api/full-prompt-preview'),
+          fetch('/api/current-analysis')
+        ]);
 
-        if (res.ok) {
-          promptContentEl.textContent = data.prompt || data.message || 'No prompt stored yet.';
+        const promptData = await promptRes.json();
+        const analysisData = await analysisRes.json();
+
+        if (promptRes.ok) {
+          promptContentEl.textContent = promptData.prompt || promptData.message || 'No prompt stored yet.';
         } else {
-          promptContentEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+          promptContentEl.textContent = 'Error: ' + (promptData.error || 'Unknown error');
+        }
+
+        if (analysisRes.ok) {
+          analysisContentEl.textContent = analysisData.analysis || analysisData.message || 'No analysis stored yet.';
+        } else {
+          analysisContentEl.textContent = 'Error: ' + (analysisData.error || 'Unknown error');
         }
       } catch (err) {
-        console.error('Failed to load prompt preview:', err);
+        console.error('Failed to load prompt/analysis:', err);
         promptContentEl.textContent = 'Failed to load prompt preview';
+        analysisContentEl.textContent = 'Failed to load analysis';
       }
     }
 

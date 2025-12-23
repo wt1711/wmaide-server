@@ -140,7 +140,48 @@ export async function createRomanticResponsePrompt_EN(
     console.error('Failed to fetch RESPONSE_CRITERIA from KV:', error);
   }
 
-  const prompt = `
+  // Check if LOG_PROMPT is enabled
+  let logPromptEnabled = false;
+  try {
+    logPromptEnabled = await kv.get(KV_KEYS.logPrompt);
+  } catch (error) {
+    console.error('Failed to check LOG_PROMPT:', error);
+  }
+
+  // Build the prompt - add reasoning request if LOG_PROMPT is enabled
+  let prompt;
+  if (logPromptEnabled) {
+    prompt = `
+${systemPrompt}
+
+This is the very last 10 turns of our conversation context.
+
+Previously sent messages are labelled by sender either [You:] or [Her:]
+
+[context]
+---
+${conversationHistory}
+---
+
+Message to reply to: "${message}"
+
+${responseCriteria}
+
+Before generating your response, give the thought process that make you come up with that response:
+
+Return your answer as JSON in this exact format:
+{"response": "your reply here", "reasoning": "How did you come up with that reply"}
+
+Return ONLY the JSON, no other text.`;
+
+    // Store the prompt for debugging
+    await kv.set(KV_KEYS.currentFullPrompt, {
+      prompt,
+      timestamp: new Date().toISOString(),
+      message,
+    });
+  } else {
+    prompt = `
 ${systemPrompt}
 
 This is the very last 10 turns of our conversation context.
@@ -157,22 +198,9 @@ Message to reply to: "${message}"
 ${responseCriteria}
 
 Provide only the content of the reply, without any additional explanation.`;
-
-  // Check if LOG_PROMPT is enabled and store the prompt
-  try {
-    const logPromptEnabled = await kv.get(KV_KEYS.logPrompt);
-    if (logPromptEnabled) {
-      await kv.set(KV_KEYS.currentFullPrompt, {
-        prompt,
-        timestamp: new Date().toISOString(),
-        message,
-      });
-    }
-  } catch (error) {
-    console.error('Failed to store prompt in KV:', error);
   }
 
-  return prompt;
+  return { prompt, expectsReasoning: logPromptEnabled };
 }
 
 export function createGradeResponsePrompt_EN(context, responseToGrade) {

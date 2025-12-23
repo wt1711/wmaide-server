@@ -59,4 +59,29 @@ router.get('/full-prompt-preview', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/current-analysis
+ * Returns the latest stored analysis from KV
+ */
+router.get('/current-analysis', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.currentAnalysis);
+
+    if (!data) {
+      return res.json({
+        analysis: null,
+        message: 'No analysis stored yet. Generate a response to see.',
+      });
+    }
+
+    res.json({
+      analysis: data.analysis,
+      timestamp: data.timestamp,
+    });
+  } catch (error) {
+    console.error('Failed to get analysis:', error);
+    res.status(500).json({ error: 'Failed to get analysis' });
+  }
+});
+
 export default router;

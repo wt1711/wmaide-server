@@ -34,6 +34,7 @@ export const KV_KEYS = {
   versionList: 'VERSION_LIST',
   logPrompt: 'LOG_PROMPT',
   currentFullPrompt: 'CURRENT_FULL_PROMPT',
+  currentAnalysis: 'CURRENT_ANALYSIS',
 };
 
 // Provider API Base URLs
