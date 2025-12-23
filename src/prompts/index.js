@@ -57,7 +57,7 @@ function formatTurns(turns) {
  * @param {number} maxTurns - Maximum number of turns to include
  * @returns {string} Formatted conversation history
  */
-function getConversationHistory(context, maxTurns = 10) {
+function getConversationHistory(context, maxTurns = 20) {
   if (!context || context.length === 0) {
     return '';
   }
