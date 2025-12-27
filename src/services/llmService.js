@@ -7,21 +7,21 @@ async function getConfig() {
   let provider = DEFAULTS.llmProvider;
 
   try {
-    const kvModel = await kv.get(KV_KEYS.llmModelName);
-    if (kvModel) {
-      model = kvModel;
-    }
-  } catch (error) {
-    console.error('Failed to fetch LLM_MODEL_NAME from KV, using default:', error);
-  }
+    const [kvModel, kvProvider] = await Promise.all([
+      kv.get(KV_KEYS.llmModelName).catch((err) => {
+        console.error('Failed to fetch LLM_MODEL_NAME from KV:', err);
+        return null;
+      }),
+      kv.get(KV_KEYS.llmProvider).catch((err) => {
+        console.error('Failed to fetch LLM_PROVIDER from KV:', err);
+        return null;
+      }),
+    ]);
 
-  try {
-    const kvProvider = await kv.get(KV_KEYS.llmProvider);
-    if (kvProvider) {
-      provider = kvProvider;
-    }
+    if (kvModel) model = kvModel;
+    if (kvProvider) provider = kvProvider;
   } catch (error) {
-    console.error('Failed to fetch LLM_PROVIDER from KV, using default:', error);
+    console.error('Failed to fetch config from KV, using defaults:', error);
   }
 
   return { model, provider };
