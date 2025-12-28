@@ -38,7 +38,7 @@ router.post('/generate-response', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting /api/generate-response request at:', new Date().toISOString());
 
-  const { context, message, spec } = req.body;
+  const { context, message, spec, lastMsgTimeStamp } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -49,7 +49,7 @@ router.post('/generate-response', async (req, res) => {
   }
 
   try {
-    const { prompt, expectsReasoning } = await createRomanticResponsePrompt_EN(context, message, spec);
+    const { prompt, expectsReasoning } = await createRomanticResponsePrompt_EN(context, message, spec, lastMsgTimeStamp);
     const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();

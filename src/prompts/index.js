@@ -114,7 +114,8 @@ export async function createRomanticResponsePrompt_EN(
     toxicity: 50,
     humour: 50,
     emojiUse: 50,
-  }
+  },
+  lastMsgTimeStamp = '',
 ) {
   const conversationHistory = getConversationHistory(context);
 
@@ -162,6 +163,8 @@ ${conversationHistory}
 ---
 
 Message to reply to: "${message}"
+
+Message time: "${lastMsgTimeStamp}"
 
 ${responseCriteria}
 
