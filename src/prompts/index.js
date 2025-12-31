@@ -2,6 +2,35 @@ import { kv } from '@vercel/kv';
 import { KV_KEYS } from '../config/index.js';
 
 /**
+ * Format elapsed time from timestamp to now in human-readable form
+ * @param {string|null} timestamp - ISO 8601 date string (e.g., '2025-12-27T16:10:35.973Z')
+ * @returns {string} Human-readable elapsed time (e.g., "5 minutes ago")
+ */
+function formatElapsedTime(timestamp) {
+  if (!timestamp) return '';
+
+  const msgTime = new Date(timestamp).getTime();
+  if (isNaN(msgTime)) return '';
+
+  const now = Date.now();
+  const elapsed = now - msgTime;
+
+  if (elapsed < 0) return 'just now';
+
+  const seconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (seconds > 0) return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
+
+  return 'just now';
+}
+
+/**
  * Check if two messages are from the same sender
  * @param {Object} msg1 - First message
  * @param {Object} msg2 - Second message
@@ -164,7 +193,7 @@ ${conversationHistory}
 
 Message to reply to: "${message}"
 
-Message time: "${lastMsgTimeStamp}"
+[message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || 'unknown'}]
 
 ${responseCriteria}
 
