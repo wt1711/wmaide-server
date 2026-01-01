@@ -43,7 +43,7 @@ export const ADMIN_USERS = ['admin', 'vixx-admin'];
 
 // Credit limits
 export const CREDIT_LIMITS = {
-  freeCredits: 20,
+  freeCredits: 2,
   limitReachedMessage: 'You have used all of your free credit. Contact VIXX team for an upgrade',
 };
 

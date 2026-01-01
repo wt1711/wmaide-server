@@ -93,8 +93,8 @@ router.post('/generate-response', async (req, res) => {
   if (userId) {
     const creditCheck = await checkCredits(userId);
     if (!creditCheck.allowed) {
-      return res.status(403).json({
-        error: CREDIT_LIMITS.limitReachedMessage,
+      return res.json({
+        response: CREDIT_LIMITS.limitReachedMessage,
         creditsRemaining: 0,
       });
     }
@@ -193,8 +193,8 @@ router.post('/generate-response-stream', async (req, res) => {
   if (userId) {
     const creditCheck = await checkCredits(userId);
     if (!creditCheck.allowed) {
-      return res.status(403).json({
-        error: CREDIT_LIMITS.limitReachedMessage,
+      return res.json({
+        response: CREDIT_LIMITS.limitReachedMessage,
         creditsRemaining: 0,
       });
     }
