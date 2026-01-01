@@ -3,6 +3,7 @@ import { kv } from '@vercel/kv';
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 import { PROVIDERS } from '../config/models.js';
+import configCache from '../services/configCache.js';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.post('/system-prompt', async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt' });
     }
     await kv.set(KV_KEYS.systemPrompt, prompt);
+    configCache.invalidate();
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save SYSTEM_PROMPT to KV:', error);
@@ -49,6 +51,7 @@ router.post('/llm-model', async (req, res) => {
       return res.status(400).json({ error: 'Missing modelName' });
     }
     await kv.set(KV_KEYS.llmModelName, modelName);
+    configCache.invalidate();
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save LLM_MODEL_NAME to KV:', error);
@@ -74,6 +77,7 @@ router.post('/llm-provider', async (req, res) => {
       return res.status(400).json({ error: 'Missing provider' });
     }
     await kv.set(KV_KEYS.llmProvider, provider);
+    configCache.invalidate();
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save LLM_PROVIDER to KV:', error);
@@ -99,6 +103,7 @@ router.post('/response-criteria', async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt' });
     }
     await kv.set(KV_KEYS.responseCriteria, prompt);
+    configCache.invalidate();
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save RESPONSE_CRITERIA to KV:', error);

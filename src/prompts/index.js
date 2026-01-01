@@ -2,6 +2,35 @@ import { kv } from '@vercel/kv';
 import { KV_KEYS } from '../config/index.js';
 
 /**
+ * Format elapsed time from timestamp to now in human-readable form
+ * @param {string|null} timestamp - ISO 8601 date string (e.g., '2025-12-27T16:10:35.973Z')
+ * @returns {string} Human-readable elapsed time (e.g., "5 minutes ago")
+ */
+function formatElapsedTime(timestamp) {
+  if (!timestamp) return '';
+
+  const msgTime = new Date(timestamp).getTime();
+  if (isNaN(msgTime)) return '';
+
+  const now = Date.now();
+  const elapsed = now - msgTime;
+
+  if (elapsed < 0) return 'just now';
+
+  const seconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (seconds > 0) return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
+
+  return 'just now';
+}
+
+/**
  * Check if two messages are from the same sender
  * @param {Object} msg1 - First message
  * @param {Object} msg2 - Second message
@@ -114,38 +143,37 @@ export async function createRomanticResponsePrompt_EN(
     toxicity: 50,
     humour: 50,
     emojiUse: 50,
-  }
+  },
+  lastMsgTimeStamp = '',
 ) {
   const conversationHistory = getConversationHistory(context);
 
-  // Fetch system prompt from KV, fallback to default
+  // Fetch all config from KV in parallel
   let systemPrompt = DEFAULT_SYSTEM_PROMPT;
-  try {
-    const kvPrompt = await kv.get(KV_KEYS.systemPrompt);
-    if (kvPrompt) {
-      systemPrompt = kvPrompt;
-    }
-  } catch (error) {
-    console.error('Failed to fetch SYSTEM_PROMPT from KV:', error);
-  }
-
-  // Fetch response criteria from KV, fallback to default
   let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
-  try {
-    const kvCriteria = await kv.get(KV_KEYS.responseCriteria);
-    if (kvCriteria) {
-      responseCriteria = kvCriteria;
-    }
-  } catch (error) {
-    console.error('Failed to fetch RESPONSE_CRITERIA from KV:', error);
-  }
-
-  // Check if LOG_PROMPT is enabled
   let logPromptEnabled = false;
+
   try {
-    logPromptEnabled = await kv.get(KV_KEYS.logPrompt);
+    const [kvPrompt, kvCriteria, kvLogPrompt] = await Promise.all([
+      kv.get(KV_KEYS.systemPrompt).catch((err) => {
+        console.error('Failed to fetch SYSTEM_PROMPT from KV:', err);
+        return null;
+      }),
+      kv.get(KV_KEYS.responseCriteria).catch((err) => {
+        console.error('Failed to fetch RESPONSE_CRITERIA from KV:', err);
+        return null;
+      }),
+      kv.get(KV_KEYS.logPrompt).catch((err) => {
+        console.error('Failed to check LOG_PROMPT:', err);
+        return false;
+      }),
+    ]);
+
+    if (kvPrompt) systemPrompt = kvPrompt;
+    if (kvCriteria) responseCriteria = kvCriteria;
+    if (kvLogPrompt) logPromptEnabled = kvLogPrompt;
   } catch (error) {
-    console.error('Failed to check LOG_PROMPT:', error);
+    console.error('Failed to fetch config from KV, using defaults:', error);
   }
 
   // Build the prompt - add reasoning request if LOG_PROMPT is enabled
@@ -164,6 +192,8 @@ ${conversationHistory}
 ---
 
 Message to reply to: "${message}"
+
+[message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || 'unknown'}]
 
 ${responseCriteria}
 

@@ -43,6 +43,47 @@ class OpenAIProvider extends BaseProvider {
       throw error;
     }
   }
+
+  async generateStream(config, prompt, onChunk) {
+    const client = this.getClient();
+    const startTime = Date.now();
+    this.logStart(config.model);
+
+    try {
+      const stream = await client.chat.completions.create({
+        model: config.model,
+        messages: [{ role: 'user', content: prompt }],
+        stream: true,
+      });
+
+      let fullText = '';
+      let usage = null;
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content || '';
+        if (delta) {
+          fullText += delta;
+          onChunk(delta);
+        }
+        // Usage may be provided in the final chunk
+        if (chunk.usage) {
+          usage = {
+            promptTokens: chunk.usage.prompt_tokens || 0,
+            completionTokens: chunk.usage.completion_tokens || 0,
+            totalTokens: chunk.usage.total_tokens || 0,
+          };
+        }
+      }
+
+      const durationMs = Date.now() - startTime;
+      this.logSuccess(durationMs);
+      return this.createResponse(fullText, usage, durationMs);
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      this.logError(durationMs, error);
+      throw error;
+    }
+  }
 }
 
 export default new OpenAIProvider();

@@ -46,6 +46,20 @@ class BaseProvider {
   }
 
   /**
+   * Generate a streaming response from the LLM provider.
+   * Must be implemented by subclasses for streaming support.
+   *
+   * @param {Object} config - Configuration object containing model and other settings
+   * @param {string} config.model - The model name to use
+   * @param {string} prompt - The prompt to send to the LLM
+   * @param {Function} onChunk - Callback for each text chunk: (text: string) => void
+   * @returns {Promise<StandardResponse>} Final result with usage stats after stream completes
+   */
+  async generateStream(config, prompt, onChunk) {
+    throw new Error('generateStream() must be implemented by subclass');
+  }
+
+  /**
    * Create a standardized successful response object
    * @param {string} text - The generated text content
    * @param {Object} usage - Token usage information
