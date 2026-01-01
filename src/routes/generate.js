@@ -79,7 +79,7 @@ router.post('/generate-response', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting /api/generate-response request at:', new Date().toISOString());
 
-  const { context, message, spec, lastMsgTimeStamp, userID } = req.body;
+  const { context, message, spec, lastMsgTimeStamp, userId } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -89,9 +89,9 @@ router.post('/generate-response', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  // Check credit limit for non-admin users (only if userID is provided)
-  if (userID) {
-    const creditCheck = await checkCredits(userID);
+  // Check credit limit for non-admin users (only if userId is provided)
+  if (userId) {
+    const creditCheck = await checkCredits(userId);
     if (!creditCheck.allowed) {
       return res.status(403).json({
         error: CREDIT_LIMITS.limitReachedMessage,
@@ -145,13 +145,13 @@ router.post('/generate-response', async (req, res) => {
       }
     }
 
-    // Increment credit usage for non-admin users (only if userID is provided)
+    // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
-    if (userID) {
-      if (!isAdmin(userID)) {
-        await incrementUserCredits(userID);
+    if (userId) {
+      if (!isAdmin(userId)) {
+        await incrementUserCredits(userId);
       }
-      const updatedCredits = await checkCredits(userID);
+      const updatedCredits = await checkCredits(userId);
       creditsRemaining = updatedCredits.remaining;
     }
 
@@ -179,7 +179,7 @@ router.post('/generate-response-stream', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting streaming /api/generate-response-stream at:', new Date().toISOString());
 
-  const { context, message, spec, userID } = req.body;
+  const { context, message, spec, userId } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -189,9 +189,9 @@ router.post('/generate-response-stream', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  // Check credit limit for non-admin users (only if userID is provided)
-  if (userID) {
-    const creditCheck = await checkCredits(userID);
+  // Check credit limit for non-admin users (only if userId is provided)
+  if (userId) {
+    const creditCheck = await checkCredits(userId);
     if (!creditCheck.allowed) {
       return res.status(403).json({
         error: CREDIT_LIMITS.limitReachedMessage,
@@ -254,13 +254,13 @@ router.post('/generate-response-stream', async (req, res) => {
       }
     }
 
-    // Increment credit usage for non-admin users (only if userID is provided)
+    // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
-    if (userID) {
-      if (!isAdmin(userID)) {
-        await incrementUserCredits(userID);
+    if (userId) {
+      if (!isAdmin(userId)) {
+        await incrementUserCredits(userId);
       }
-      const updatedCredits = await checkCredits(userID);
+      const updatedCredits = await checkCredits(userId);
       creditsRemaining = updatedCredits.remaining;
     }
 
@@ -292,21 +292,21 @@ router.post('/generate-response-stream', async (req, res) => {
  * Get remaining credits for a user
  */
 router.get('/credits-remaining', async (req, res) => {
-  const { userID } = req.query;
+  const { userId } = req.query;
 
-  if (!userID) {
-    return res.status(400).json({ error: 'Missing userID query parameter' });
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId query parameter' });
   }
 
   try {
-    const creditInfo = await checkCredits(userID);
+    const creditInfo = await checkCredits(userId);
 
     res.json({
-      userID,
-      isAdmin: isAdmin(userID),
+      userId,
+      isAdmin: isAdmin(userId),
       creditsRemaining: creditInfo.remaining,
       creditsUsed: creditInfo.used || 0,
-      totalCredits: isAdmin(userID) ? 'unlimited' : CREDIT_LIMITS.freeCredits,
+      totalCredits: isAdmin(userId) ? 'unlimited' : CREDIT_LIMITS.freeCredits,
     });
   } catch (error) {
     console.error('Failed to get credits:', error);
