@@ -4,7 +4,57 @@ import { createRomanticResponsePrompt_EN } from '../prompts/index.js';
 import { generateResponse } from '../services/llmService.js';
 import { generateStreamWithErrorHandling } from '../services/llm/providerFactory.js';
 import configCache from '../services/configCache.js';
-import { KV_KEYS } from '../config/index.js';
+import { KV_KEYS, ADMIN_USERS, CREDIT_LIMITS } from '../config/index.js';
+
+/**
+ * Check if user is an admin (bypasses credit limits)
+ */
+function isAdmin(userId) {
+  return ADMIN_USERS.includes(userId);
+}
+
+/**
+ * Get all user credits object
+ */
+async function getAllUserCredits() {
+  const credits = await kv.get(KV_KEYS.userCredits);
+  return credits || {};
+}
+
+/**
+ * Get user's current credit usage
+ */
+async function getUserCredits(userId) {
+  const allCredits = await getAllUserCredits();
+  return allCredits[userId] || 0;
+}
+
+/**
+ * Increment user's credit usage
+ */
+async function incrementUserCredits(userId) {
+  const allCredits = await getAllUserCredits();
+  const current = allCredits[userId] || 0;
+  allCredits[userId] = current + 1;
+  await kv.set(KV_KEYS.userCredits, allCredits);
+  return current + 1;
+}
+
+/**
+ * Check if user has credits remaining
+ */
+async function checkCredits(userId) {
+  if (isAdmin(userId)) {
+    return { allowed: true, remaining: Infinity };
+  }
+  const used = await getUserCredits(userId);
+  const remaining = CREDIT_LIMITS.freeCredits - used;
+  return {
+    allowed: remaining > 0,
+    remaining: Math.max(0, remaining),
+    used,
+  };
+}
 
 const router = Router();
 
@@ -38,7 +88,7 @@ router.post('/generate-response', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting /api/generate-response request at:', new Date().toISOString());
 
-  const { context, message, spec, lastMsgTimeStamp } = req.body;
+  const { context, message, spec, lastMsgTimeStamp, userId } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -46,6 +96,17 @@ router.post('/generate-response', async (req, res) => {
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message' });
+  }
+
+  // Check credit limit for non-admin users (only if userId is provided)
+  if (userId) {
+    const creditCheck = await checkCredits(userId);
+    if (!creditCheck.allowed) {
+      return res.json({
+        response: CREDIT_LIMITS.limitReachedMessage,
+        creditsRemaining: 0,
+      });
+    }
   }
 
   try {
@@ -93,10 +154,21 @@ router.post('/generate-response', async (req, res) => {
       }
     }
 
+    // Increment credit usage for non-admin users (only if userId is provided)
+    let creditsRemaining = null;
+    if (userId) {
+      if (!isAdmin(userId)) {
+        await incrementUserCredits(userId);
+      }
+      const updatedCredits = await checkCredits(userId);
+      creditsRemaining = updatedCredits.remaining;
+    }
+
     res.json({
       response: responseText,
       usage: result.usage,
       provider: result.provider,
+      ...(creditsRemaining !== null && { creditsRemaining }),
       timing: {
         totalDuration,
         totalDurationSeconds: (totalDuration / 1000).toFixed(2),
@@ -116,7 +188,7 @@ router.post('/generate-response-stream', async (req, res) => {
   const requestStartTime = Date.now();
   console.log('📝 Starting streaming /api/generate-response-stream at:', new Date().toISOString());
 
-  const { context, message, spec } = req.body;
+  const { context, message, spec, userId } = req.body;
 
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
@@ -124,6 +196,17 @@ router.post('/generate-response-stream', async (req, res) => {
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message' });
+  }
+
+  // Check credit limit for non-admin users (only if userId is provided)
+  if (userId) {
+    const creditCheck = await checkCredits(userId);
+    if (!creditCheck.allowed) {
+      return res.json({
+        response: CREDIT_LIMITS.limitReachedMessage,
+        creditsRemaining: 0,
+      });
+    }
   }
 
   // Set SSE headers
@@ -180,12 +263,23 @@ router.post('/generate-response-stream', async (req, res) => {
       }
     }
 
+    // Increment credit usage for non-admin users (only if userId is provided)
+    let creditsRemaining = null;
+    if (userId) {
+      if (!isAdmin(userId)) {
+        await incrementUserCredits(userId);
+      }
+      const updatedCredits = await checkCredits(userId);
+      creditsRemaining = updatedCredits.remaining;
+    }
+
     // Send completion event with metadata
     res.write(
       `data: ${JSON.stringify({
         type: 'done',
         usage: result.usage,
         provider: result.provider,
+        ...(creditsRemaining !== null && { creditsRemaining }),
         timing: {
           totalDuration,
           totalDurationSeconds: (totalDuration / 1000).toFixed(2),
@@ -200,6 +294,32 @@ router.post('/generate-response-stream', async (req, res) => {
     console.error('Streaming error:', error);
     res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
     res.end();
+  }
+});
+
+/**
+ * Get remaining credits for a user
+ */
+router.get('/credits-remaining', async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId query parameter' });
+  }
+
+  try {
+    const creditInfo = await checkCredits(userId);
+
+    res.json({
+      userId,
+      isAdmin: isAdmin(userId),
+      creditsRemaining: creditInfo.remaining,
+      creditsUsed: creditInfo.used || 0,
+      totalCredits: isAdmin(userId) ? 'unlimited' : CREDIT_LIMITS.freeCredits,
+    });
+  } catch (error) {
+    console.error('Failed to get credits:', error);
+    res.status(500).json({ error: 'Failed to retrieve credit information' });
   }
 });
 
