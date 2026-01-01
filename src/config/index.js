@@ -35,7 +35,7 @@ export const KV_KEYS = {
   logPrompt: 'LOG_PROMPT',
   currentFullPrompt: 'CURRENT_FULL_PROMPT',
   currentAnalysis: 'CURRENT_ANALYSIS',
-  userCredits: (userId) => `USER_CREDITS:${userId}`,
+  userCredits: 'USER_CREDITS',
 };
 
 // Admin users (bypass credit limits)
@@ -43,7 +43,7 @@ export const ADMIN_USERS = ['admin', 'vixx-admin'];
 
 // Credit limits
 export const CREDIT_LIMITS = {
-  freeCredits: 2,
+  freeCredits: 5,
   limitReachedMessage: 'You have used all of your free credit. Contact VIXX team for an upgrade',
 };
 

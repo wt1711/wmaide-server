@@ -14,20 +14,29 @@ function isAdmin(userId) {
 }
 
 /**
+ * Get all user credits object
+ */
+async function getAllUserCredits() {
+  const credits = await kv.get(KV_KEYS.userCredits);
+  return credits || {};
+}
+
+/**
  * Get user's current credit usage
  */
 async function getUserCredits(userId) {
-  const used = await kv.get(KV_KEYS.userCredits(userId));
-  return used || 0;
+  const allCredits = await getAllUserCredits();
+  return allCredits[userId] || 0;
 }
 
 /**
  * Increment user's credit usage
  */
 async function incrementUserCredits(userId) {
-  const key = KV_KEYS.userCredits(userId);
-  const current = await kv.get(key) || 0;
-  await kv.set(key, current + 1);
+  const allCredits = await getAllUserCredits();
+  const current = allCredits[userId] || 0;
+  allCredits[userId] = current + 1;
+  await kv.set(KV_KEYS.userCredits, allCredits);
   return current + 1;
 }
 
