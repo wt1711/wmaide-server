@@ -81,10 +81,6 @@ router.post('/generate-response', async (req, res) => {
 
   const { context, message, spec, lastMsgTimeStamp, userID } = req.body;
 
-  if (!userID) {
-    return res.status(400).json({ error: 'Missing userID' });
-  }
-
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
   }
@@ -93,13 +89,15 @@ router.post('/generate-response', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  // Check credit limit for non-admin users
-  const creditCheck = await checkCredits(userID);
-  if (!creditCheck.allowed) {
-    return res.status(403).json({
-      error: CREDIT_LIMITS.limitReachedMessage,
-      creditsRemaining: 0,
-    });
+  // Check credit limit for non-admin users (only if userID is provided)
+  if (userID) {
+    const creditCheck = await checkCredits(userID);
+    if (!creditCheck.allowed) {
+      return res.status(403).json({
+        error: CREDIT_LIMITS.limitReachedMessage,
+        creditsRemaining: 0,
+      });
+    }
   }
 
   try {
@@ -147,19 +145,21 @@ router.post('/generate-response', async (req, res) => {
       }
     }
 
-    // Increment credit usage for non-admin users
-    console.log(`userId`, userID);
-    if (!isAdmin(userID)) {
-      await incrementUserCredits(userID);
+    // Increment credit usage for non-admin users (only if userID is provided)
+    let creditsRemaining = null;
+    if (userID) {
+      if (!isAdmin(userID)) {
+        await incrementUserCredits(userID);
+      }
+      const updatedCredits = await checkCredits(userID);
+      creditsRemaining = updatedCredits.remaining;
     }
-
-    const updatedCredits = await checkCredits(userID);
 
     res.json({
       response: responseText,
       usage: result.usage,
       provider: result.provider,
-      creditsRemaining: updatedCredits.remaining,
+      ...(creditsRemaining !== null && { creditsRemaining }),
       timing: {
         totalDuration,
         totalDurationSeconds: (totalDuration / 1000).toFixed(2),
@@ -181,10 +181,6 @@ router.post('/generate-response-stream', async (req, res) => {
 
   const { context, message, spec, userID } = req.body;
 
-  if (!userID) {
-    return res.status(400).json({ error: 'Missing userID' });
-  }
-
   if (!context) {
     return res.status(400).json({ error: 'Missing context' });
   }
@@ -193,13 +189,15 @@ router.post('/generate-response-stream', async (req, res) => {
     return res.status(400).json({ error: 'Missing message' });
   }
 
-  // Check credit limit for non-admin users
-  const creditCheck = await checkCredits(userID);
-  if (!creditCheck.allowed) {
-    return res.status(403).json({
-      error: CREDIT_LIMITS.limitReachedMessage,
-      creditsRemaining: 0,
-    });
+  // Check credit limit for non-admin users (only if userID is provided)
+  if (userID) {
+    const creditCheck = await checkCredits(userID);
+    if (!creditCheck.allowed) {
+      return res.status(403).json({
+        error: CREDIT_LIMITS.limitReachedMessage,
+        creditsRemaining: 0,
+      });
+    }
   }
 
   // Set SSE headers
@@ -256,12 +254,15 @@ router.post('/generate-response-stream', async (req, res) => {
       }
     }
 
-    // Increment credit usage for non-admin users
-    if (!isAdmin(userID)) {
-      await incrementUserCredits(userID);
+    // Increment credit usage for non-admin users (only if userID is provided)
+    let creditsRemaining = null;
+    if (userID) {
+      if (!isAdmin(userID)) {
+        await incrementUserCredits(userID);
+      }
+      const updatedCredits = await checkCredits(userID);
+      creditsRemaining = updatedCredits.remaining;
     }
-
-    const updatedCredits = await checkCredits(userID);
 
     // Send completion event with metadata
     res.write(
@@ -269,7 +270,7 @@ router.post('/generate-response-stream', async (req, res) => {
         type: 'done',
         usage: result.usage,
         provider: result.provider,
-        creditsRemaining: updatedCredits.remaining,
+        ...(creditsRemaining !== null && { creditsRemaining }),
         timing: {
           totalDuration,
           totalDurationSeconds: (totalDuration / 1000).toFixed(2),
