@@ -233,6 +233,115 @@ Provide only the content of the reply, without any additional explanation.`;
   return { prompt, expectsReasoning: logPromptEnabled };
 }
 
+export async function createRomanticResponsePromptWithIdea_EN(
+  context,
+  message,
+  spec = {
+    filter: 'Main Character',
+    spiciness: 50,
+    boldness: 50,
+    thirst: 50,
+    energy: 50,
+    toxicity: 50,
+    humour: 50,
+    emojiUse: 50,
+    idea: '',
+  },
+  lastMsgTimeStamp = '',
+) {
+  const conversationHistory = getConversationHistory(context);
+
+  // Fetch all config from KV in parallel
+  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
+  let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
+  let logPromptEnabled = false;
+
+  try {
+    const [kvPrompt, kvCriteria, kvLogPrompt] = await Promise.all([
+      kv.get(KV_KEYS.systemPrompt).catch((err) => {
+        console.error('Failed to fetch SYSTEM_PROMPT from KV:', err);
+        return null;
+      }),
+      kv.get(KV_KEYS.responseCriteria).catch((err) => {
+        console.error('Failed to fetch RESPONSE_CRITERIA from KV:', err);
+        return null;
+      }),
+      kv.get(KV_KEYS.logPrompt).catch((err) => {
+        console.error('Failed to check LOG_PROMPT:', err);
+        return false;
+      }),
+    ]);
+
+    if (kvPrompt) systemPrompt = kvPrompt;
+    if (kvCriteria) responseCriteria = kvCriteria;
+    if (kvLogPrompt) logPromptEnabled = kvLogPrompt;
+  } catch (error) {
+    console.error('Failed to fetch config from KV, using defaults:', error);
+  }
+
+  // Build the idea instruction if provided
+  const ideaInstruction = spec?.idea
+    ? `\n\nIMPORTANT: The user wants to express this idea in the response: "${spec.idea}". Incorporate this idea naturally into your reply while maintaining the conversation's tone and context.`
+    : '';
+
+  // Build the prompt - add reasoning request if LOG_PROMPT is enabled
+  let prompt;
+  if (logPromptEnabled) {
+    prompt = `
+${systemPrompt}
+
+This is the very last 10 turns of our conversation context.
+
+Previously sent messages are labelled by sender either [You:] or [Her:]
+
+[context]
+---
+${conversationHistory}
+---
+
+Message to reply to: "${message}"
+
+[message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || 'unknown'}]
+
+${responseCriteria}${ideaInstruction}
+
+Before generating your response, give the thought process that make you come up with that response:
+
+Return your answer as JSON in this exact format:
+{"response": "your reply here", "reasoning": "How did you come up with that reply"}
+
+Return ONLY the JSON, no other text.`;
+
+    // Store the prompt for debugging
+    await kv.set(KV_KEYS.currentFullPrompt, {
+      prompt,
+      timestamp: new Date().toISOString(),
+      message,
+      idea: spec.idea || null,
+    });
+  } else {
+    prompt = `
+${systemPrompt}
+
+This is the very last 10 turns of our conversation context.
+
+Previously sent messages are labelled by sender either [You:] or [Her:]
+
+[context]
+---
+${conversationHistory}
+---
+
+Message to reply to: "${message}"
+
+${responseCriteria}${ideaInstruction}
+
+Provide only the content of the reply, without any additional explanation.`;
+  }
+
+  return { prompt, expectsReasoning: logPromptEnabled };
+}
+
 export function createGradeResponsePrompt_EN(context, responseToGrade) {
   const conversationHistory = getConversationHistory(context);
 

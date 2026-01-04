@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { kv } from '@vercel/kv';
-import { createRomanticResponsePrompt_EN } from '../prompts/index.js';
+import { createRomanticResponsePrompt_EN, createRomanticResponsePromptWithIdea_EN } from '../prompts/index.js';
 import { generateResponse } from '../services/llmService.js';
 import { generateStreamWithErrorHandling } from '../services/llm/providerFactory.js';
 import configCache from '../services/configCache.js';
@@ -177,6 +177,110 @@ router.post('/generate-response', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to generate response:', error);
+    res.status(500).json({ error: 'Error from LLM provider' });
+  }
+});
+
+/**
+ * Generate response with a specific idea to incorporate
+ */
+router.post('/generate-response-with-idea', async (req, res) => {
+  const requestStartTime = Date.now();
+  console.log('📝 Starting /api/generate-response-with-idea request at:', new Date().toISOString());
+
+  const { context, message, spec, lastMsgTimeStamp, userId } = req.body;
+
+  if (!context) {
+    return res.status(400).json({ error: 'Missing context' });
+  }
+
+  if (!message) {
+    return res.status(400).json({ error: 'Missing message' });
+  }
+
+  if (!spec?.idea) {
+    return res.status(400).json({ error: 'Missing idea in spec object' });
+  }
+
+  // Check credit limit for non-admin users (only if userId is provided)
+  if (userId) {
+    const creditCheck = await checkCredits(userId);
+    if (!creditCheck.allowed) {
+      return res.json({
+        response: CREDIT_LIMITS.limitReachedMessage,
+        creditsRemaining: 0,
+      });
+    }
+  }
+
+  try {
+    const { prompt, expectsReasoning } = await createRomanticResponsePromptWithIdea_EN(context, message, spec, lastMsgTimeStamp);
+    const result = await generateResponse(prompt);
+
+    const requestEndTime = Date.now();
+    const totalDuration = requestEndTime - requestStartTime;
+    console.log(`🎯 Total request time: ${totalDuration}ms (${(totalDuration / 1000).toFixed(2)}s)`);
+
+    // Handle error response from provider
+    if (result.error) {
+      return res.status(result.status || 500).json({
+        error: result.error,
+        provider: result.provider,
+        timing: {
+          totalDuration,
+          totalDurationSeconds: (totalDuration / 1000).toFixed(2),
+        },
+      });
+    }
+
+    let responseText = result.text || 'Cannot get response from LLM';
+
+    // If reasoning was requested, parse the JSON response
+    if (expectsReasoning && result.text) {
+      const parsed = parseReasoningResponse(result.text);
+
+      if (parsed && parsed.response) {
+        responseText = parsed.response;
+
+        // Store the reasoning in KV
+        try {
+          await kv.set(KV_KEYS.currentAnalysis, {
+            analysis: parsed.reasoning || 'No reasoning provided',
+            timestamp: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error('Failed to store reasoning:', err);
+        }
+      } else {
+        // JSON parsing failed, use raw text and log warning
+        console.warn('Failed to parse reasoning JSON, using raw response');
+        responseText = result.text;
+      }
+    }
+
+    // Increment credit usage for non-admin users (only if userId is provided)
+    let creditsRemaining = null;
+    if (userId) {
+      if (!isAdmin(userId)) {
+        await incrementUserCredits(userId);
+      }
+      const updatedCredits = await checkCredits(userId);
+      creditsRemaining = updatedCredits.remaining;
+    }
+
+    res.json({
+      response: responseText,
+      usage: result.usage,
+      provider: result.provider,
+      ...(creditsRemaining !== null && { creditsRemaining }),
+      timing: {
+        totalDuration,
+        totalDurationSeconds: (totalDuration / 1000).toFixed(2),
+        providerDuration: result.durationMs,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to generate response with idea:', error);
     res.status(500).json({ error: 'Error from LLM provider' });
   }
 });
