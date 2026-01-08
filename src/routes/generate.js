@@ -184,7 +184,7 @@ router.post('/generate-response', async (req, res) => {
     }
 
     // Parse banter response to remove [emotion] and [reason] tags
-    responseText = parseBanterResponse(responseText);
+    // responseText = parseBanterResponse(responseText);
 
     // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
@@ -291,7 +291,7 @@ router.post('/generate-response-with-idea', async (req, res) => {
     }
 
     // Parse banter response to remove [emotion] and [reason] tags
-    responseText = parseBanterResponse(responseText);
+    // responseText = parseBanterResponse(responseText);
 
     // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
