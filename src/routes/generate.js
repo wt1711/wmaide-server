@@ -59,6 +59,35 @@ async function checkCredits(userId) {
 const router = Router();
 
 /**
+ * Parse banter response from LLM, removing [emotion] and [reason] tags
+ * Handles multiple formats:
+ * - Multiline: "[emotion] content\n[reason] content\nactual line"
+ * - Multiline with colon: "[emotion: content]\n[reason: content]\nactual line"
+ * - Inline: "[emotion] [reason] actual line"
+ * Returns: just the actual line
+ */
+function parseBanterResponse(text) {
+  if (!text) return text;
+
+  // Handle multiline format: remove lines starting with [emotion or [reason (with optional colon)
+  const lines = text.trim().split('\n');
+  const filteredLines = lines.filter((line) => {
+    const trimmed = line.trim();
+    // Match [emotion], [emotion:, [reason], [reason:
+    return !(/^\[emotion[\]:]/.test(trimmed)) && !(/^\[reason[\]:]/.test(trimmed));
+  });
+
+  let cleaned = filteredLines.join('\n').trim();
+
+  // Also handle inline format: [tag1] [tag2] text on same line
+  if (cleaned) {
+    cleaned = cleaned.replace(/^(\s*\[[^\]]*\]\s*)+/, '').trim();
+  }
+
+  return cleaned || text; // Fallback to original if nothing left
+}
+
+/**
  * Parse JSON response from LLM, handling potential formatting issues
  */
 function parseReasoningResponse(text) {
@@ -153,6 +182,9 @@ router.post('/generate-response', async (req, res) => {
         responseText = result.text;
       }
     }
+
+    // Parse banter response to remove [emotion] and [reason] tags
+    responseText = parseBanterResponse(responseText);
 
     // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
@@ -257,6 +289,9 @@ router.post('/generate-response-with-idea', async (req, res) => {
         responseText = result.text;
       }
     }
+
+    // Parse banter response to remove [emotion] and [reason] tags
+    responseText = parseBanterResponse(responseText);
 
     // Increment credit usage for non-admin users (only if userId is provided)
     let creditsRemaining = null;
