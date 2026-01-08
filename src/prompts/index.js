@@ -195,14 +195,7 @@ Message to reply to: "${message}"
 
 [message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || 'unknown'}]
 
-${responseCriteria}
-
-Before generating your response, give the thought process that make you come up with that response:
-
-Return your answer as JSON in this exact format:
-{"response": "your reply here", "reasoning": "How did you come up with that reply"}
-
-Return ONLY the JSON, no other text.`;
+${responseCriteria}`;
 
     // Store the prompt for debugging
     await kv.set(KV_KEYS.currentFullPrompt, {
@@ -303,14 +296,7 @@ Message to reply to: "${message}"
 
 [message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || 'unknown'}]
 
-${responseCriteria}${ideaInstruction}
-
-Before generating your response, give the thought process that make you come up with that response:
-
-Return your answer as JSON in this exact format:
-{"response": "your reply here", "reasoning": "How did you come up with that reply"}
-
-Return ONLY the JSON, no other text.`;
+${responseCriteria}${ideaInstruction}`;
 
     // Store the prompt for debugging
     await kv.set(KV_KEYS.currentFullPrompt, {
