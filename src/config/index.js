@@ -39,17 +39,24 @@ export const KV_KEYS = {
 };
 
 // Admin users (bypass credit limits)
-export const ADMIN_USERS = ['admin', 'vixx-admin', 
+export const ADMIN_USERS = ['admin', 'vixx-admin',
   '@instagram_1535273395:matrix.lvbrd.xyz', // lovefish49
-  '@instagram_1340551653:matrix.lvbrd.xyz', // ngxhoanghai
   '@instagram_421229918:matrix.lvbrd.xyz', // dtran1004
+];
+
+// Premium users (200 credits)
+export const PREMIUM_USERS = [
+  '@instagram_1340551653:matrix.lvbrd.xyz', // ngxhoanghai
+  '@instagram_7730134120:matrix.lvbrd.xyz', // minh.lt_
   '@instagram_3487576414:matrix.lvbrd.xyz', // dkieeuu
-  '@instagram_7730134120:matrix.lvbrd.xyz' // minh.lt_
+  '@instagram_56911609594:matrix.lvbrd.xyz', // vedup.1711
+  
 ];
 
 // Credit limits
 export const CREDIT_LIMITS = {
   freeCredits: 5,
+  premiumCredits: 200,
   limitReachedMessage: `
   [emotion] ... [reason] All credits used. Chat with team to upgrade \n`,
 };
@@ -67,5 +74,6 @@ export default {
   KV_KEYS,
   PROVIDER_URLS,
   ADMIN_USERS,
+  PREMIUM_USERS,
   CREDIT_LIMITS,
 };

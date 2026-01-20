@@ -4,13 +4,20 @@ import { createRomanticResponsePrompt_EN, createRomanticResponsePromptWithIdea_E
 import { generateResponse } from '../services/llmService.js';
 import { generateStreamWithErrorHandling } from '../services/llm/providerFactory.js';
 import configCache from '../services/configCache.js';
-import { KV_KEYS, ADMIN_USERS, CREDIT_LIMITS } from '../config/index.js';
+import { KV_KEYS, ADMIN_USERS, PREMIUM_USERS, CREDIT_LIMITS } from '../config/index.js';
 
 /**
  * Check if user is an admin (bypasses credit limits)
  */
 function isAdmin(userId) {
   return ADMIN_USERS.includes(userId);
+}
+
+/**
+ * Check if user is a premium user (200 credits)
+ */
+function isPremium(userId) {
+  return PREMIUM_USERS.includes(userId);
 }
 
 /**
@@ -41,6 +48,15 @@ async function incrementUserCredits(userId) {
 }
 
 /**
+ * Get credit limit for user based on tier
+ */
+function getCreditLimit(userId) {
+  if (isAdmin(userId)) return Infinity;
+  if (isPremium(userId)) return CREDIT_LIMITS.premiumCredits;
+  return CREDIT_LIMITS.freeCredits;
+}
+
+/**
  * Check if user has credits remaining
  */
 async function checkCredits(userId) {
@@ -48,7 +64,8 @@ async function checkCredits(userId) {
     return { allowed: true, remaining: Infinity };
   }
   const used = await getUserCredits(userId);
-  const remaining = CREDIT_LIMITS.freeCredits - used;
+  const limit = getCreditLimit(userId);
+  const remaining = limit - used;
   return {
     allowed: remaining > 0,
     remaining: Math.max(0, remaining),
@@ -449,12 +466,16 @@ router.get('/credits-remaining', async (req, res) => {
   try {
     const creditInfo = await checkCredits(userId);
 
+    const userIsAdmin = isAdmin(userId);
+    const userIsPremium = isPremium(userId);
+
     res.json({
       userId,
-      isAdmin: isAdmin(userId),
+      isAdmin: userIsAdmin,
+      isPremium: userIsPremium,
       creditsRemaining: creditInfo.remaining,
       creditsUsed: creditInfo.used || 0,
-      totalCredits: isAdmin(userId) ? 'unlimited' : CREDIT_LIMITS.freeCredits,
+      totalCredits: userIsAdmin ? 'unlimited' : getCreditLimit(userId),
     });
   } catch (error) {
     console.error('Failed to get credits:', error);
