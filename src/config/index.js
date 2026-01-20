@@ -41,7 +41,6 @@ export const KV_KEYS = {
 // Admin users (bypass credit limits)
 export const ADMIN_USERS = ['admin', 'vixx-admin',
   '@instagram_1535273395:matrix.lvbrd.xyz', // lovefish49
-  '@instagram_421229918:matrix.lvbrd.xyz', // dtran1004
 ];
 
 // Premium users (200 credits)
