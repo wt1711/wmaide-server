@@ -46,6 +46,7 @@ export const ADMIN_USERS = ['admin', 'vixx-admin',
 
 // Premium users (200 credits)
 export const PREMIUM_USERS = [
+  '@instagram_421229918:matrix.lvbrd.xyz', // dtran1004
   '@instagram_1340551653:matrix.lvbrd.xyz', // ngxhoanghai
   '@instagram_7730134120:matrix.lvbrd.xyz', // minh.lt_
   '@instagram_3487576414:matrix.lvbrd.xyz', // dkieeuu
