@@ -39,12 +39,19 @@ export const KV_KEYS = {
 };
 
 // Admin users (bypass credit limits)
-export const ADMIN_USERS = ['admin', 'vixx-admin', '@instagram_56911609594:matrix.lvbrd.xyz', '@instagram_1535273395:matrix.lvbrd.xyz', '@instagram_1340551653:matrix.lvbrd.xyz', '@instagram_421229918:matrix.lvbrd.xyz', '@instagram_3487576414:matrix.lvbrd.xyz'];
+export const ADMIN_USERS = ['admin', 'vixx-admin', 
+  '@instagram_1535273395:matrix.lvbrd.xyz', // lovefish49
+  '@instagram_1340551653:matrix.lvbrd.xyz', // ngxhoanghai
+  '@instagram_421229918:matrix.lvbrd.xyz', // dtran1004
+  '@instagram_3487576414:matrix.lvbrd.xyz', // dkieeuu
+  '@instagram_7730134120:matrix.lvbrd.xyz' // minh.lt_
+];
 
 // Credit limits
 export const CREDIT_LIMITS = {
   freeCredits: 5,
-  limitReachedMessage: 'You have used all of your free credit. Contact VIXX team for an upgrade',
+  limitReachedMessage: `
+  [emotion] ... [reason] All credits used. Chat with team to upgrade \n`,
 };
 
 // Provider API Base URLs
