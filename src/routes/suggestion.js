@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createConsultationPrompt_EN } from '../prompts/index.js';
+import { createConsultationPrompt_VN } from '../prompts/index.js';
 import { generateResponse } from '../services/llmService.js';
 
 const router = Router();
@@ -12,7 +12,7 @@ router.post('/suggestion', async (req, res) => {
   }
 
   try {
-    const prompt = createConsultationPrompt_EN(context, selectedMessage, question);
+    const prompt = createConsultationPrompt_VN(context, selectedMessage, question);
     const result = await generateResponse(prompt);
 
     if (result.error) {

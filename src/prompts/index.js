@@ -131,6 +131,30 @@ ${conversationHistory}
   return prompt;
 }
 
+export function createConsultationPrompt_VN(context, selectedMessage, question) {
+  const conversationHistory = getConversationHistory(context);
+
+  let prompt = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.
+---
+${conversationHistory}
+---
+`;
+
+  if (selectedMessage) {
+    prompt += `Người dùng đã chọn tin nhắn sau: "${selectedMessage.text}"\n\nNhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương và mối quan hệ giữa hai người dựa trên ngữ cảnh.`;
+  } else {
+    prompt += `Nhiệm vụ của bạn là tư vấn cho người dùng về cách tán tỉnh, phân tích tâm lý phụ nữ, và hẹn hò.`;
+  }
+
+  if (question) {
+    prompt += `\n\nCâu hỏi cụ thể của người dùng: "${question}"`;
+  }
+
+  prompt += `\n\nCâu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký tự.`;
+
+  return prompt;
+}
+
 export async function createRomanticResponsePrompt_EN(
   context,
   message,
