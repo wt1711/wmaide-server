@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { kv } from '@vercel/kv';
-import { createConsultationPrompt_VN } from '../prompts/index.js';
+import { createConsultationPrompt_EN } from '../prompts/index.js';
 import { generateResponse } from '../services/llmService.js';
 import { KV_KEYS } from '../config/index.js';
 
@@ -14,7 +14,7 @@ router.post('/suggestion', async (req, res) => {
   }
 
   try {
-    const prompt = await createConsultationPrompt_VN(context, selectedMessage, question);
+    const prompt = await createConsultationPrompt_EN(context, selectedMessage, question);
 
     // Store the prompt for admin viewing
     await kv.set(KV_KEYS.latestSuggestionPrompt, {

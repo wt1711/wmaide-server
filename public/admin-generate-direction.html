@@ -149,10 +149,19 @@
 
     <div class="card">
       <div class="section">
-        <h3>System Prompt</h3>
-        <textarea id="prompt-textarea" placeholder="Loading..."></textarea>
+        <h3>Prompt Template</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+          Full prompt template sent to the LLM. Available placeholders:<br>
+          <code>{{conversationHistory}}</code> - The conversation history<br>
+          <code>{{messageText}}</code> - The message to reply to<br>
+          <code>{{directionLabel}}</code> - Direction label<br>
+          <code>{{directionTone}}</code> - Direction tone<br>
+          <code>{{directionEmoji}}</code> - Direction emoji<br>
+          <code>{{directionDescription}}</code> - Direction description
+        </p>
+        <textarea id="format-textarea" placeholder="Loading..." style="height: 400px;"></textarea>
         <br><br>
-        <button id="save-btn">Save Prompt</button>
+        <button id="save-btn">Save Template</button>
         <button id="reset-btn" class="reset-btn">Reset to Default</button>
         <div id="status" class="status"></div>
       </div>
@@ -177,7 +186,7 @@
     const llmProviderEl = document.getElementById('llm-provider');
     const llmModelEl = document.getElementById('llm-model');
     const modelPriceEl = document.getElementById('model-price');
-    const promptTextarea = document.getElementById('prompt-textarea');
+    const formatTextarea = document.getElementById('format-textarea');
     const saveBtn = document.getElementById('save-btn');
     const resetBtn = document.getElementById('reset-btn');
     const statusEl = document.getElementById('status');
@@ -246,31 +255,31 @@
       }
     }
 
-    async function loadPrompt() {
+    async function loadFormat() {
       try {
-        const res = await fetch('/api/generate-from-direction-prompt');
+        const res = await fetch('/api/generate-from-direction-message-format');
         const data = await res.json();
-        promptTextarea.value = data.prompt || '';
+        formatTextarea.value = data.format || '';
       } catch (err) {
-        console.error('Failed to load prompt:', err);
-        promptTextarea.placeholder = 'Failed to load prompt';
+        console.error('Failed to load template:', err);
+        formatTextarea.placeholder = 'Failed to load template';
       }
     }
 
-    async function savePrompt() {
+    async function saveFormat() {
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
       statusEl.className = 'status';
 
       try {
-        const res = await fetch('/api/generate-from-direction-prompt', {
+        const res = await fetch('/api/generate-from-direction-message-format', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptTextarea.value })
+          body: JSON.stringify({ format: formatTextarea.value })
         });
 
         if (res.ok) {
-          statusEl.textContent = 'Prompt saved successfully!';
+          statusEl.textContent = 'Template saved successfully!';
           statusEl.className = 'status success';
         } else {
           const data = await res.json();
@@ -278,29 +287,51 @@
           statusEl.className = 'status error';
         }
       } catch (err) {
-        console.error('Failed to save prompt:', err);
-        statusEl.textContent = 'Failed to save prompt';
+        console.error('Failed to save template:', err);
+        statusEl.textContent = 'Failed to save template';
         statusEl.className = 'status error';
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Prompt';
+        saveBtn.textContent = 'Save Template';
       }
     }
 
-    async function resetPrompt() {
-      if (!confirm('Reset to default prompt? This will discard your changes.')) {
+    async function resetFormat() {
+      if (!confirm('Reset to default template? This will discard your changes.')) {
         return;
       }
 
-      promptTextarea.value = `You are an expert at crafting engaging, emotionally resonant messages in romantic conversations. Your task is to generate a response that follows a specific strategic direction.
+      formatTextarea.value = `You are an expert at crafting engaging, emotionally resonant messages in romantic conversations. Your task is to generate a response that follows a specific strategic direction.
 
 Create responses that are:
 - Authentic and natural sounding
 - Emotionally engaging
 - Appropriate for the conversation context
-- Short and impactful (under 140 characters preferred)`;
+- Short and impactful (under 140 characters preferred)
 
-      await savePrompt();
+---
+Conversation History:
+{{conversationHistory}}
+---
+
+Message to reply to: "{{messageText}}"
+
+Direction to follow:
+- Label: {{directionLabel}}
+- Tone: {{directionTone}}
+- Emoji style: {{directionEmoji}}
+- Approach: {{directionDescription}}
+
+Generate a response following this direction. Respond with a JSON object:
+{
+  "message": "<the generated response message>",
+  "reasoning": "<brief explanation of why this message works>",
+  "emotion": "<the emotional tone conveyed>"
+}
+
+Return ONLY valid JSON, no additional text.`;
+
+      await saveFormat();
     }
 
     const previewBtn = document.getElementById('preview-btn');
@@ -333,13 +364,13 @@ Create responses that are:
       populateModelsForProvider(llmProviderEl.value);
     });
     llmModelEl.addEventListener('change', updatePriceDisplay);
-    saveBtn.addEventListener('click', savePrompt);
-    resetBtn.addEventListener('click', resetPrompt);
+    saveBtn.addEventListener('click', saveFormat);
+    resetBtn.addEventListener('click', resetFormat);
     previewBtn.addEventListener('click', loadLatestPrompt);
 
     // Initial load
     loadModels().then(() => loadLlmSettings());
-    loadPrompt();
+    loadFormat();
     loadLatestPrompt();
   </script>
 </body>

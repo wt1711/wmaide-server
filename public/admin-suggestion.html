@@ -149,12 +149,18 @@
 
     <div class="card">
       <div class="section">
-        <h3>System Prompt</h3>
-        <textarea id="prompt-textarea" placeholder="Loading..."></textarea>
+        <h3>Prompt Template</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+          Full prompt template sent to the LLM. Available placeholders:<br>
+          <code>{{conversationHistory}}</code> - The conversation history<br>
+          <code>{{selectedMessageInstruction}}</code> - Instructions based on selected message<br>
+          <code>{{questionInstruction}}</code> - The user's question if provided
+        </p>
+        <textarea id="format-textarea" placeholder="Loading..." style="height: 400px;"></textarea>
         <br><br>
-        <button id="save-btn">Save Prompt</button>
-        <button id="reset-btn" class="reset-btn">Reset to Default</button>
-        <div id="status" class="status"></div>
+        <button id="save-format-btn">Save Template</button>
+        <button id="reset-format-btn" class="reset-btn">Reset to Default</button>
+        <div id="format-status" class="status"></div>
       </div>
     </div>
 
@@ -177,10 +183,11 @@
     const llmProviderEl = document.getElementById('llm-provider');
     const llmModelEl = document.getElementById('llm-model');
     const modelPriceEl = document.getElementById('model-price');
-    const promptTextarea = document.getElementById('prompt-textarea');
-    const saveBtn = document.getElementById('save-btn');
-    const resetBtn = document.getElementById('reset-btn');
-    const statusEl = document.getElementById('status');
+
+    const formatTextarea = document.getElementById('format-textarea');
+    const saveFormatBtn = document.getElementById('save-format-btn');
+    const resetFormatBtn = document.getElementById('reset-format-btn');
+    const formatStatusEl = document.getElementById('format-status');
 
     let providersData = [];
 
@@ -246,55 +253,62 @@
       }
     }
 
-    async function loadPrompt() {
+    // Template functions
+    async function loadFormat() {
       try {
-        const res = await fetch('/api/suggestion-prompt');
+        const res = await fetch('/api/suggestion-message-format');
         const data = await res.json();
-        promptTextarea.value = data.prompt || '';
+        formatTextarea.value = data.format || '';
       } catch (err) {
-        console.error('Failed to load prompt:', err);
-        promptTextarea.placeholder = 'Failed to load prompt';
+        console.error('Failed to load format:', err);
+        formatTextarea.placeholder = 'Failed to load format';
       }
     }
 
-    async function savePrompt() {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
-      statusEl.className = 'status';
+    async function saveFormat() {
+      saveFormatBtn.disabled = true;
+      saveFormatBtn.textContent = 'Saving...';
+      formatStatusEl.className = 'status';
 
       try {
-        const res = await fetch('/api/suggestion-prompt', {
+        const res = await fetch('/api/suggestion-message-format', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptTextarea.value })
+          body: JSON.stringify({ format: formatTextarea.value })
         });
 
         if (res.ok) {
-          statusEl.textContent = 'Prompt saved successfully!';
-          statusEl.className = 'status success';
+          formatStatusEl.textContent = 'Template saved successfully!';
+          formatStatusEl.className = 'status success';
         } else {
           const data = await res.json();
-          statusEl.textContent = 'Error: ' + (data.error || 'Unknown error');
-          statusEl.className = 'status error';
+          formatStatusEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+          formatStatusEl.className = 'status error';
         }
       } catch (err) {
-        console.error('Failed to save prompt:', err);
-        statusEl.textContent = 'Failed to save prompt';
-        statusEl.className = 'status error';
+        console.error('Failed to save template:', err);
+        formatStatusEl.textContent = 'Failed to save template';
+        formatStatusEl.className = 'status error';
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Prompt';
+        saveFormatBtn.disabled = false;
+        saveFormatBtn.textContent = 'Save Template';
       }
     }
 
-    async function resetPrompt() {
-      if (!confirm('Reset to default prompt? This will discard your changes.')) {
+    async function resetFormat() {
+      if (!confirm('Reset to default template? This will discard your changes.')) {
         return;
       }
 
-      promptTextarea.value = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.`;
+      formatTextarea.value = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.
+---
+{{conversationHistory}}
+---
+{{selectedMessageInstruction}}{{questionInstruction}}
 
-      await savePrompt();
+Câu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký tự.`;
+
+      await saveFormat();
     }
 
     const previewBtn = document.getElementById('preview-btn');
@@ -333,13 +347,13 @@
       populateModelsForProvider(llmProviderEl.value);
     });
     llmModelEl.addEventListener('change', updatePriceDisplay);
-    saveBtn.addEventListener('click', savePrompt);
-    resetBtn.addEventListener('click', resetPrompt);
+    saveFormatBtn.addEventListener('click', saveFormat);
+    resetFormatBtn.addEventListener('click', resetFormat);
     previewBtn.addEventListener('click', loadLatestPrompt);
 
     // Initial load
     loadModels().then(() => loadLlmSettings());
-    loadPrompt();
+    loadFormat();
     loadLatestPrompt();
   </script>
 </body>

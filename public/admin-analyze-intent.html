@@ -149,10 +149,17 @@
 
     <div class="card">
       <div class="section">
-        <h3>System Prompt</h3>
-        <textarea id="prompt-textarea" placeholder="Loading..."></textarea>
+        <h3>Prompt Template</h3>
+        <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
+          Full prompt template sent to the LLM. Available placeholders:<br>
+          <code>{{conversationHistory}}</code> - The conversation history<br>
+          <code>{{messageText}}</code> - The message text to analyze<br>
+          <code>{{sender}}</code> - The sender of the message<br>
+          <code>{{timestamp}}</code> - Message timestamp
+        </p>
+        <textarea id="format-textarea" placeholder="Loading..." style="height: 400px;"></textarea>
         <br><br>
-        <button id="save-btn">Save Prompt</button>
+        <button id="save-btn">Save Template</button>
         <button id="reset-btn" class="reset-btn">Reset to Default</button>
         <div id="status" class="status"></div>
       </div>
@@ -177,13 +184,12 @@
     const llmProviderEl = document.getElementById('llm-provider');
     const llmModelEl = document.getElementById('llm-model');
     const modelPriceEl = document.getElementById('model-price');
-    const promptTextarea = document.getElementById('prompt-textarea');
+    const formatTextarea = document.getElementById('format-textarea');
     const saveBtn = document.getElementById('save-btn');
     const resetBtn = document.getElementById('reset-btn');
     const statusEl = document.getElementById('status');
 
     let providersData = [];
-    let defaultPrompt = '';
 
     async function loadModels() {
       try {
@@ -247,32 +253,31 @@
       }
     }
 
-    async function loadPrompt() {
+    async function loadFormat() {
       try {
-        const res = await fetch('/api/analyze-intent-prompt');
+        const res = await fetch('/api/analyze-intent-message-format');
         const data = await res.json();
-        promptTextarea.value = data.prompt || '';
-        defaultPrompt = data.prompt || '';
+        formatTextarea.value = data.format || '';
       } catch (err) {
-        console.error('Failed to load prompt:', err);
-        promptTextarea.placeholder = 'Failed to load prompt';
+        console.error('Failed to load template:', err);
+        formatTextarea.placeholder = 'Failed to load template';
       }
     }
 
-    async function savePrompt() {
+    async function saveFormat() {
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
       statusEl.className = 'status';
 
       try {
-        const res = await fetch('/api/analyze-intent-prompt', {
+        const res = await fetch('/api/analyze-intent-message-format', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptTextarea.value })
+          body: JSON.stringify({ format: formatTextarea.value })
         });
 
         if (res.ok) {
-          statusEl.textContent = 'Prompt saved successfully!';
+          statusEl.textContent = 'Template saved successfully!';
           statusEl.className = 'status success';
         } else {
           const data = await res.json();
@@ -280,29 +285,67 @@
           statusEl.className = 'status error';
         }
       } catch (err) {
-        console.error('Failed to save prompt:', err);
-        statusEl.textContent = 'Failed to save prompt';
+        console.error('Failed to save template:', err);
+        statusEl.textContent = 'Failed to save template';
         statusEl.className = 'status error';
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Prompt';
+        saveBtn.textContent = 'Save Template';
       }
     }
 
-    async function resetPrompt() {
-      if (!confirm('Reset to default prompt? This will discard your changes.')) {
+    async function resetFormat() {
+      if (!confirm('Reset to default template? This will discard your changes.')) {
         return;
       }
 
-      promptTextarea.value = `You are an expert at analyzing romantic conversations and reading emotional signals. Your task is to analyze a message and provide insights about:
+      formatTextarea.value = `You are an expert at analyzing romantic conversations and reading emotional signals. Your task is to analyze a message and provide insights about:
 1. Interest level - how interested the sender appears to be (0-100 score)
 2. Emotional tone - what emotions are being expressed
 3. State read - a brief interpretation of what's happening
 4. Recommended response directions - strategic ways to reply
 
-Be accurate and insightful. Consider context, word choice, emoji usage, message length, and timing patterns.`;
+Be accurate and insightful. Consider context, word choice, emoji usage, message length, and timing patterns.
 
-      await savePrompt();
+---
+Conversation History:
+{{conversationHistory}}
+---
+
+Message to analyze: "{{messageText}}"
+Sender: {{sender}}
+Timestamp: {{timestamp}}
+
+Respond with a JSON object in this exact format:
+{
+  "interestLevel": {
+    "score": <number 0-100>,
+    "label": "<Very High|High|Moderate|Low|Uncertain>",
+    "indicators": ["<indicator1>", "<indicator2>"]
+  },
+  "emotionalTone": {
+    "primary": "<primary emotion>",
+    "secondary": "<secondary emotion or null>",
+    "confidence": <number 0-100>
+  },
+  "stateRead": "<1-2 sentence interpretation>",
+  "recommendedDirection": {
+    "label": "<short label>",
+    "tone": "<suggested tone>",
+    "emoji": "<single emoji>",
+    "description": "<1 sentence explanation>"
+  },
+  "alternativeDirections": [
+    {
+      "label": "<short label>",
+      "tone": "<suggested tone>",
+      "emoji": "<single emoji>",
+      "description": "<1 sentence explanation>"
+    }
+  ]
+}`;
+
+      await saveFormat();
     }
 
     const previewBtn = document.getElementById('preview-btn');
@@ -334,13 +377,13 @@ Be accurate and insightful. Consider context, word choice, emoji usage, message 
       populateModelsForProvider(llmProviderEl.value);
     });
     llmModelEl.addEventListener('change', updatePriceDisplay);
-    saveBtn.addEventListener('click', savePrompt);
-    resetBtn.addEventListener('click', resetPrompt);
+    saveBtn.addEventListener('click', saveFormat);
+    resetBtn.addEventListener('click', resetFormat);
     previewBtn.addEventListener('click', loadLatestPrompt);
 
     // Initial load
     loadModels().then(() => loadLlmSettings());
-    loadPrompt();
+    loadFormat();
     loadLatestPrompt();
   </script>
 </body>

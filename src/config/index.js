@@ -37,12 +37,16 @@ export const KV_KEYS = {
   currentAnalysis: 'CURRENT_ANALYSIS',
   userCredits: 'USER_CREDITS',
   analyzeIntentPrompt: 'ANALYZE_INTENT_PROMPT',
+  analyzeIntentMessageFormat: 'ANALYZE_INTENT_MESSAGE_FORMAT',
   generateFromDirectionPrompt: 'GENERATE_FROM_DIRECTION_PROMPT',
+  generateFromDirectionMessageFormat: 'GENERATE_FROM_DIRECTION_MESSAGE_FORMAT',
   gradeOwnMessagePrompt: 'GRADE_OWN_MESSAGE_PROMPT',
+  gradeOwnMessageMessageFormat: 'GRADE_OWN_MESSAGE_MESSAGE_FORMAT',
   latestAnalyzeIntentPrompt: 'LATEST_ANALYZE_INTENT_PROMPT',
   latestGenerateFromDirectionPrompt: 'LATEST_GENERATE_FROM_DIRECTION_PROMPT',
   latestGradeOwnMessagePrompt: 'LATEST_GRADE_OWN_MESSAGE_PROMPT',
   suggestionPrompt: 'SUGGESTION_PROMPT',
+  suggestionMessageFormat: 'SUGGESTION_MESSAGE_FORMAT',
   latestSuggestionPrompt: 'LATEST_SUGGESTION_PROMPT',
 };
 
