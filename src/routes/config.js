@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { kv } from '@vercel/kv';
-import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
+import {
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_RESPONSE_CRITERIA,
+  DEFAULT_ANALYZE_INTENT_PROMPT,
+  DEFAULT_GENERATE_FROM_DIRECTION_PROMPT,
+  DEFAULT_GRADE_OWN_MESSAGE_PROMPT,
+} from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 import { PROVIDERS } from '../config/models.js';
 import configCache from '../services/configCache.js';
@@ -107,6 +113,84 @@ router.post('/response-criteria', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to save RESPONSE_CRITERIA to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Analyze Intent Prompt API
+router.get('/analyze-intent-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.analyzeIntentPrompt);
+    res.json({ prompt: prompt || DEFAULT_ANALYZE_INTENT_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch ANALYZE_INTENT_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_ANALYZE_INTENT_PROMPT });
+  }
+});
+
+router.post('/analyze-intent-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.analyzeIntentPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save ANALYZE_INTENT_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Generate From Direction Prompt API
+router.get('/generate-from-direction-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.generateFromDirectionPrompt);
+    res.json({ prompt: prompt || DEFAULT_GENERATE_FROM_DIRECTION_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_FROM_DIRECTION_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_GENERATE_FROM_DIRECTION_PROMPT });
+  }
+});
+
+router.post('/generate-from-direction-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.generateFromDirectionPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GENERATE_FROM_DIRECTION_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Grade Own Message Prompt API
+router.get('/grade-own-message-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.gradeOwnMessagePrompt);
+    res.json({ prompt: prompt || DEFAULT_GRADE_OWN_MESSAGE_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch GRADE_OWN_MESSAGE_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_GRADE_OWN_MESSAGE_PROMPT });
+  }
+});
+
+router.post('/grade-own-message-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.gradeOwnMessagePrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GRADE_OWN_MESSAGE_PROMPT to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
   }
 });

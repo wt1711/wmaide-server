@@ -11,6 +11,9 @@ import configRouter from './src/routes/config.js';
 import versionsRouter from './src/routes/versions.js';
 import generateRouter from './src/routes/generate.js';
 import promptPreviewRouter from './src/routes/promptPreview.js';
+import analyzeIntentRouter from './src/routes/analyzeIntent.js';
+import generateFromDirectionRouter from './src/routes/generateFromDirection.js';
+import gradeOwnMessageRouter from './src/routes/gradeOwnMessage.js';
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -32,10 +35,22 @@ app.use('/api', configRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api', generateRouter);
 app.use('/api', promptPreviewRouter);
+app.use('/api', analyzeIntentRouter);
+app.use('/api', generateFromDirectionRouter);
+app.use('/api', gradeOwnMessageRouter);
 
 // Static file routes
 app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get('/admin-analyze-intent.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-analyze-intent.html'));
+});
+app.get('/admin-generate-direction.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-generate-direction.html'));
+});
+app.get('/admin-grade-own.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-grade-own.html'));
 });
 
 export default app;

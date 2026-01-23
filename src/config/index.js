@@ -36,6 +36,9 @@ export const KV_KEYS = {
   currentFullPrompt: 'CURRENT_FULL_PROMPT',
   currentAnalysis: 'CURRENT_ANALYSIS',
   userCredits: 'USER_CREDITS',
+  analyzeIntentPrompt: 'ANALYZE_INTENT_PROMPT',
+  generateFromDirectionPrompt: 'GENERATE_FROM_DIRECTION_PROMPT',
+  gradeOwnMessagePrompt: 'GRADE_OWN_MESSAGE_PROMPT',
 };
 
 // Admin users (bypass credit limits)

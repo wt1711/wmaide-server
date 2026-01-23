@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Own Message - Prompt Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 { color: #333; margin: 0 0 10px 0; }
+    .subtitle { color: #666; margin-bottom: 20px; }
+    .nav-links {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #e9ecef;
+      border-radius: 4px;
+    }
+    .nav-links a {
+      margin-right: 15px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .nav-links a:hover { text-decoration: underline; }
+    .section { margin-bottom: 25px; }
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: monospace;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.reset-btn { background: #6c757d; }
+    button.reset-btn:hover { background: #5a6268; }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .status.success { display: block; background: #d4edda; color: #155724; }
+    .status.error { display: block; background: #f8d7da; color: #721c24; }
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .model-info {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .model-info select {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-width: 150px;
+    }
+    .model-info label {
+      font-weight: 500;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Grade Own Message Prompt</h1>
+    <p class="subtitle">Configure the AI prompt for grading and providing feedback on user's own messages</p>
+
+    <div class="nav-links">
+      <a href="/admin.html">Main Admin</a>
+      <a href="/admin-analyze-intent.html">Analyze Intent</a>
+      <a href="/admin-generate-direction.html">Generate Direction</a>
+      <a href="/admin-grade-own.html">Grade Own Message</a>
+    </div>
+
+    <div class="card">
+      <div class="model-info">
+        <div>
+          <label for="llm-provider">Provider:</label>
+          <select id="llm-provider"></select>
+        </div>
+        <div>
+          <label for="llm-model">Model:</label>
+          <select id="llm-model"></select>
+        </div>
+        <span id="model-price" style="color: #666;"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section">
+        <h3>System Prompt</h3>
+        <textarea id="prompt-textarea" placeholder="Loading..."></textarea>
+        <br><br>
+        <button id="save-btn">Save Prompt</button>
+        <button id="reset-btn" class="reset-btn">Reset to Default</button>
+        <div id="status" class="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const llmProviderEl = document.getElementById('llm-provider');
+    const llmModelEl = document.getElementById('llm-model');
+    const modelPriceEl = document.getElementById('model-price');
+    const promptTextarea = document.getElementById('prompt-textarea');
+    const saveBtn = document.getElementById('save-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const statusEl = document.getElementById('status');
+
+    let providersData = [];
+
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models');
+        providersData = await res.json();
+        populateProviders();
+      } catch (err) {
+        console.error('Failed to load models:', err);
+      }
+    }
+
+    function populateProviders() {
+      llmProviderEl.innerHTML = '';
+      providersData.forEach(provider => {
+        const option = document.createElement('option');
+        option.value = provider.id;
+        option.textContent = provider.name;
+        llmProviderEl.appendChild(option);
+      });
+    }
+
+    function populateModelsForProvider(providerId) {
+      const provider = providersData.find(p => p.id === providerId);
+      llmModelEl.innerHTML = '';
+      if (provider) {
+        provider.models.forEach(model => {
+          const option = document.createElement('option');
+          option.value = model.id;
+          option.textContent = model.id;
+          llmModelEl.appendChild(option);
+        });
+      }
+      updatePriceDisplay();
+    }
+
+    function updatePriceDisplay() {
+      const provider = providersData.find(p => p.id === llmProviderEl.value);
+      const model = provider?.models.find(m => m.id === llmModelEl.value);
+      if (model?.input_price) {
+        modelPriceEl.textContent = `$${model.input_price}/1M tokens`;
+      } else {
+        modelPriceEl.textContent = '';
+      }
+    }
+
+    async function loadLlmSettings() {
+      try {
+        const [providerRes, modelRes] = await Promise.all([
+          fetch('/api/llm-provider'),
+          fetch('/api/llm-model')
+        ]);
+        const providerData = await providerRes.json();
+        const modelData = await modelRes.json();
+
+        llmProviderEl.value = providerData.provider || 'openai';
+        populateModelsForProvider(llmProviderEl.value);
+        llmModelEl.value = modelData.modelName || 'gpt-4o';
+        updatePriceDisplay();
+      } catch (err) {
+        console.error('Failed to load LLM settings:', err);
+      }
+    }
+
+    async function loadPrompt() {
+      try {
+        const res = await fetch('/api/grade-own-message-prompt');
+        const data = await res.json();
+        promptTextarea.value = data.prompt || '';
+      } catch (err) {
+        console.error('Failed to load prompt:', err);
+        promptTextarea.placeholder = 'Failed to load prompt';
+      }
+    }
+
+    async function savePrompt() {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      statusEl.className = 'status';
+
+      try {
+        const res = await fetch('/api/grade-own-message-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptTextarea.value })
+        });
+
+        if (res.ok) {
+          statusEl.textContent = 'Prompt saved successfully!';
+          statusEl.className = 'status success';
+        } else {
+          const data = await res.json();
+          statusEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+          statusEl.className = 'status error';
+        }
+      } catch (err) {
+        console.error('Failed to save prompt:', err);
+        statusEl.textContent = 'Failed to save prompt';
+        statusEl.className = 'status error';
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Prompt';
+      }
+    }
+
+    async function resetPrompt() {
+      if (!confirm('Reset to default prompt? This will discard your changes.')) {
+        return;
+      }
+
+      promptTextarea.value = `You are an expert at evaluating messages in romantic conversations. Your task is to grade a user's message and provide constructive feedback.
+
+Evaluate based on:
+- Emotional impact and engagement
+- Appropriateness for the conversation flow
+- Strategic effectiveness
+- Authenticity and naturalness
+
+Be encouraging but honest. Provide specific, actionable feedback.`;
+
+      await savePrompt();
+    }
+
+    llmProviderEl.addEventListener('change', () => {
+      populateModelsForProvider(llmProviderEl.value);
+    });
+    llmModelEl.addEventListener('change', updatePriceDisplay);
+    saveBtn.addEventListener('click', savePrompt);
+    resetBtn.addEventListener('click', resetPrompt);
+
+    // Initial load
+    loadModels().then(() => loadLlmSettings());
+    loadPrompt();
+  </script>
+</body>
+</html>

@@ -375,3 +375,177 @@ Grade:`;
 
   return prompt;
 }
+
+// ============ Analyze Intent ============
+
+export const DEFAULT_ANALYZE_INTENT_PROMPT = `You are an expert at analyzing romantic conversations and reading emotional signals. Your task is to analyze a message and provide insights about:
+1. Interest level - how interested the sender appears to be (0-100 score)
+2. Emotional tone - what emotions are being expressed
+3. State read - a brief interpretation of what's happening
+4. Recommended response directions - strategic ways to reply
+
+Be accurate and insightful. Consider context, word choice, emoji usage, message length, and timing patterns.`;
+
+export async function createAnalyzeIntentPrompt(context, message) {
+  const conversationHistory = getConversationHistory(context);
+
+  let systemPrompt = DEFAULT_ANALYZE_INTENT_PROMPT;
+  try {
+    const kvPrompt = await kv.get(KV_KEYS.analyzeIntentPrompt);
+    if (kvPrompt) systemPrompt = kvPrompt;
+  } catch (error) {
+    console.error('Failed to fetch ANALYZE_INTENT_PROMPT from KV:', error);
+  }
+
+  const prompt = `${systemPrompt}
+
+---
+Conversation History:
+${conversationHistory}
+---
+
+Message to analyze: "${message.text}"
+Sender: ${message.sender}
+Timestamp: ${message.timestamp}
+
+Respond with a JSON object in this exact format:
+{
+  "interestLevel": {
+    "score": <number 0-100>,
+    "label": "<Very High|High|Moderate|Low|Uncertain>",
+    "indicators": ["<indicator1>", "<indicator2>"]
+  },
+  "emotionalTone": {
+    "primary": "<primary emotion>",
+    "secondary": "<secondary emotion or null>",
+    "confidence": <number 0-100>
+  },
+  "stateRead": "<1-2 sentence interpretation>",
+  "recommendedDirection": {
+    "label": "<short label>",
+    "tone": "<playful|warm|excited|curious|helpful|mirroring|interested|casual>",
+    "emoji": "<single emoji>",
+    "description": "<brief description of the approach>"
+  },
+  "alternativeDirections": [
+    {
+      "label": "<short label>",
+      "tone": "<tone>",
+      "emoji": "<emoji>",
+      "description": "<brief description>"
+    }
+  ]
+}
+
+Return ONLY valid JSON, no additional text.`;
+
+  return prompt;
+}
+
+// ============ Generate From Direction ============
+
+export const DEFAULT_GENERATE_FROM_DIRECTION_PROMPT = `You are an expert at crafting engaging, emotionally resonant messages in romantic conversations. Your task is to generate a response that follows a specific strategic direction.
+
+Create responses that are:
+- Authentic and natural sounding
+- Emotionally engaging
+- Appropriate for the conversation context
+- Short and impactful (under 140 characters preferred)`;
+
+export async function createGenerateFromDirectionPrompt(context, messageText, direction) {
+  const conversationHistory = getConversationHistory(context);
+
+  let systemPrompt = DEFAULT_GENERATE_FROM_DIRECTION_PROMPT;
+  try {
+    const kvPrompt = await kv.get(KV_KEYS.generateFromDirectionPrompt);
+    if (kvPrompt) systemPrompt = kvPrompt;
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_FROM_DIRECTION_PROMPT from KV:', error);
+  }
+
+  const prompt = `${systemPrompt}
+
+---
+Conversation History:
+${conversationHistory}
+---
+
+Message to reply to: "${messageText}"
+
+Direction to follow:
+- Label: ${direction.label}
+- Tone: ${direction.tone}
+- Emoji style: ${direction.emoji}
+- Approach: ${direction.description}
+
+Generate a response following this direction. Respond with a JSON object:
+{
+  "message": "<the generated response message>",
+  "reasoning": "<brief explanation of why this message works>",
+  "emotion": "<the emotional tone conveyed>"
+}
+
+Return ONLY valid JSON, no additional text.`;
+
+  return prompt;
+}
+
+// ============ Grade Own Message ============
+
+export const DEFAULT_GRADE_OWN_MESSAGE_PROMPT = `You are an expert at evaluating messages in romantic conversations. Your task is to grade a user's message and provide constructive feedback.
+
+Evaluate based on:
+- Emotional impact and engagement
+- Appropriateness for the conversation flow
+- Strategic effectiveness
+- Authenticity and naturalness
+
+Be encouraging but honest. Provide specific, actionable feedback.`;
+
+export async function createGradeOwnMessagePrompt(context, message) {
+  const conversationHistory = getConversationHistory(context);
+
+  let systemPrompt = DEFAULT_GRADE_OWN_MESSAGE_PROMPT;
+  try {
+    const kvPrompt = await kv.get(KV_KEYS.gradeOwnMessagePrompt);
+    if (kvPrompt) systemPrompt = kvPrompt;
+  } catch (error) {
+    console.error('Failed to fetch GRADE_OWN_MESSAGE_PROMPT from KV:', error);
+  }
+
+  const prompt = `${systemPrompt}
+
+---
+Conversation History:
+${conversationHistory}
+---
+
+Message to grade: "${message.text}"
+Sender: ${message.sender}
+
+Grade this message and provide feedback. Respond with a JSON object in this exact format:
+{
+  "interestLevel": {
+    "score": <number 0-100 representing quality/effectiveness>,
+    "label": "<Excellent|Good|Moderate|Needs Work|Poor>",
+    "indicators": ["<positive aspect1>", "<area for improvement>"]
+  },
+  "emotionalTone": {
+    "primary": "<primary emotion conveyed>",
+    "secondary": "<secondary emotion or null>",
+    "confidence": <number 0-100>
+  },
+  "stateRead": "<1-2 sentence feedback on the message>",
+  "recommendedDirection": {
+    "label": "<suggestion for improvement>",
+    "tone": "<suggested tone>",
+    "emoji": "<emoji>",
+    "description": "<how to improve>"
+  },
+  "alternativeDirections": []
+}
+
+Return ONLY valid JSON, no additional text.`;
+
+  return prompt;
+}
