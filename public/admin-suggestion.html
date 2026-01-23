@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analyze Intent - Prompt Admin</title>
+  <title>Suggestion - Prompt Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -122,8 +122,8 @@
 </head>
 <body>
   <div class="container">
-    <h1>Analyze Intent Prompt</h1>
-    <p class="subtitle">Configure the AI prompt for analyzing message intent and interest level</p>
+    <h1>Suggestion Prompt</h1>
+    <p class="subtitle">Configure the AI prompt for consultation/suggestion responses</p>
 
     <div class="nav-links">
       <a href="/admin.html">Main Admin</a>
@@ -164,7 +164,7 @@
         <button id="preview-btn" class="preview-btn">Refresh</button>
       </h3>
       <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-        Shows the last prompt sent to the LLM when /api/analyze-intent was called
+        Shows the last prompt sent to the LLM when /api/suggestion was called
       </p>
       <div id="preview-meta" style="font-size: 12px; color: #888; margin-bottom: 10px;"></div>
       <div id="preview-content" class="preview-content">
@@ -183,7 +183,6 @@
     const statusEl = document.getElementById('status');
 
     let providersData = [];
-    let defaultPrompt = '';
 
     async function loadModels() {
       try {
@@ -249,10 +248,9 @@
 
     async function loadPrompt() {
       try {
-        const res = await fetch('/api/analyze-intent-prompt');
+        const res = await fetch('/api/suggestion-prompt');
         const data = await res.json();
         promptTextarea.value = data.prompt || '';
-        defaultPrompt = data.prompt || '';
       } catch (err) {
         console.error('Failed to load prompt:', err);
         promptTextarea.placeholder = 'Failed to load prompt';
@@ -265,7 +263,7 @@
       statusEl.className = 'status';
 
       try {
-        const res = await fetch('/api/analyze-intent-prompt', {
+        const res = await fetch('/api/suggestion-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: promptTextarea.value })
@@ -294,13 +292,7 @@
         return;
       }
 
-      promptTextarea.value = `You are an expert at analyzing romantic conversations and reading emotional signals. Your task is to analyze a message and provide insights about:
-1. Interest level - how interested the sender appears to be (0-100 score)
-2. Emotional tone - what emotions are being expressed
-3. State read - a brief interpretation of what's happening
-4. Recommended response directions - strategic ways to reply
-
-Be accurate and insightful. Consider context, word choice, emoji usage, message length, and timing patterns.`;
+      promptTextarea.value = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.`;
 
       await savePrompt();
     }
@@ -314,15 +306,22 @@ Be accurate and insightful. Consider context, word choice, emoji usage, message 
       previewMetaEl.textContent = '';
 
       try {
-        const res = await fetch('/api/latest-analyze-intent-prompt');
+        const res = await fetch('/api/latest-suggestion-prompt');
         const data = await res.json();
 
         if (data.prompt) {
           previewContentEl.textContent = data.prompt;
           const date = new Date(data.timestamp).toLocaleString();
-          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"`;
+          let metaText = `Last called: ${date}`;
+          if (data.selectedMessage) {
+            metaText += ` | Selected: "${data.selectedMessage}"`;
+          }
+          if (data.question) {
+            metaText += ` | Question: "${data.question}"`;
+          }
+          previewMetaEl.textContent = metaText;
         } else {
-          previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/analyze-intent endpoint first.';
+          previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/suggestion endpoint first.';
         }
       } catch (err) {
         console.error('Failed to load latest prompt:', err);

@@ -52,6 +52,9 @@ app.get('/admin-generate-direction.html', (req, res) => {
 app.get('/admin-grade-own.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin-grade-own.html'));
 });
+app.get('/admin-suggestion.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-suggestion.html'));
+});
 
 export default app;
 

@@ -6,6 +6,7 @@ import {
   DEFAULT_ANALYZE_INTENT_PROMPT,
   DEFAULT_GENERATE_FROM_DIRECTION_PROMPT,
   DEFAULT_GRADE_OWN_MESSAGE_PROMPT,
+  DEFAULT_SUGGESTION_PROMPT,
 } from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 import { PROVIDERS } from '../config/models.js';
@@ -236,6 +237,47 @@ router.get('/latest-grade-own-message-prompt', async (req, res) => {
     }
   } catch (error) {
     console.error('Failed to fetch latest grade own message prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Suggestion Prompt API
+router.get('/suggestion-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.suggestionPrompt);
+    res.json({ prompt: prompt || DEFAULT_SUGGESTION_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch SUGGESTION_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_SUGGESTION_PROMPT });
+  }
+});
+
+router.post('/suggestion-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.suggestionPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save SUGGESTION_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Latest Suggestion Full Prompt API
+router.get('/latest-suggestion-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestSuggestionPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/suggestion endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest suggestion prompt:', error);
     res.status(500).json({ error: 'Failed to fetch prompt' });
   }
 });

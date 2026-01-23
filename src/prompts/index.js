@@ -131,10 +131,20 @@ ${conversationHistory}
   return prompt;
 }
 
-export function createConsultationPrompt_VN(context, selectedMessage, question) {
+export const DEFAULT_SUGGESTION_PROMPT = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.`;
+
+export async function createConsultationPrompt_VN(context, selectedMessage, question) {
   const conversationHistory = getConversationHistory(context);
 
-  let prompt = `Bạn là chuyên gia về tán tỉnh và tâm lý phụ nữ. Nhiệm vụ của bạn là tư vấn cho người dùng về tâm lý của đối phương trong câu chuyện dựa trên ngữ cảnh được chọn, cách đối phương nhìn nhận người dùng dựa trên ngữ cảnh, và cách đạt được mục tiêu hẹn hò mà người dùng đề ra. Tính cách của bạn là thẳng thắn, hài hước, và hơi châm biếm. Bạn sẽ trả lời ngắn gọn, đi thẳng vào vấn đề, không đi vào chi tiết quá nhiều trừ khi được yêu cầu, và thành thật với người dùng về tình hình thực tế thay vì nịnh nọt cảm xúc của họ.
+  let systemPrompt = DEFAULT_SUGGESTION_PROMPT;
+  try {
+    const kvPrompt = await kv.get(KV_KEYS.suggestionPrompt);
+    if (kvPrompt) systemPrompt = kvPrompt;
+  } catch (error) {
+    console.error('Failed to fetch SUGGESTION_PROMPT from KV:', error);
+  }
+
+  let prompt = `${systemPrompt}
 ---
 ${conversationHistory}
 ---
