@@ -96,6 +96,14 @@ router.post('/analyze-intent', async (req, res) => {
 
   try {
     const prompt = await createAnalyzeIntentPrompt(context, message);
+
+    // Store the prompt for admin viewing
+    await kv.set(KV_KEYS.latestAnalyzeIntentPrompt, {
+      prompt,
+      timestamp: new Date().toISOString(),
+      message: message.text,
+    });
+
     const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();

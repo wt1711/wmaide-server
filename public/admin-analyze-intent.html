@@ -159,14 +159,15 @@
 
     <div class="preview-card">
       <h3>
-        <span>Full Prompt Preview</span>
-        <button id="preview-btn" class="preview-btn">Generate Preview</button>
+        <span>Latest Full Prompt</span>
+        <button id="preview-btn" class="preview-btn">Refresh</button>
       </h3>
       <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-        This shows the complete prompt that will be sent to the LLM (with sample data)
+        Shows the last prompt sent to the LLM when /api/analyze-intent was called
       </p>
+      <div id="preview-meta" style="font-size: 12px; color: #888; margin-bottom: 10px;"></div>
       <div id="preview-content" class="preview-content">
-        Click "Generate Preview" to see the full prompt...
+        Loading...
       </div>
     </div>
   </div>
@@ -305,66 +306,27 @@ Be accurate and insightful. Consider context, word choice, emoji usage, message 
 
     const previewBtn = document.getElementById('preview-btn');
     const previewContentEl = document.getElementById('preview-content');
+    const previewMetaEl = document.getElementById('preview-meta');
 
-    function generatePreview() {
-      const systemPrompt = promptTextarea.value;
+    async function loadLatestPrompt() {
+      previewContentEl.textContent = 'Loading...';
+      previewMetaEl.textContent = '';
 
-      // Sample conversation for preview
-      const sampleConversation = `Her: Hey! How was your weekend?
-You: Pretty good, went hiking with some friends
-Her: Oh nice! Where did you go?
-You: Up to the mountains, the views were amazing
-Her: That sounds so fun! I love hiking too`;
+      try {
+        const res = await fetch('/api/latest-analyze-intent-prompt');
+        const data = await res.json();
 
-      const sampleMessage = {
-        text: "We should go together sometime!",
-        sender: "Her",
-        timestamp: new Date().toISOString()
-      };
-
-      const fullPrompt = `${systemPrompt}
-
----
-Conversation History:
-${sampleConversation}
----
-
-Message to analyze: "${sampleMessage.text}"
-Sender: ${sampleMessage.sender}
-Timestamp: ${sampleMessage.timestamp}
-
-Respond with a JSON object in this exact format:
-{
-  "interestLevel": {
-    "score": <number 0-100>,
-    "label": "<Very High|High|Moderate|Low|Uncertain>",
-    "indicators": ["<indicator1>", "<indicator2>"]
-  },
-  "emotionalTone": {
-    "primary": "<primary emotion>",
-    "secondary": "<secondary emotion or null>",
-    "confidence": <number 0-100>
-  },
-  "stateRead": "<1-2 sentence interpretation>",
-  "recommendedDirection": {
-    "label": "<short label>",
-    "tone": "<playful|warm|excited|curious|helpful|mirroring|interested|casual>",
-    "emoji": "<single emoji>",
-    "description": "<brief description of the approach>"
-  },
-  "alternativeDirections": [
-    {
-      "label": "<short label>",
-      "tone": "<tone>",
-      "emoji": "<emoji>",
-      "description": "<brief description>"
-    }
-  ]
-}
-
-Return ONLY valid JSON, no additional text.`;
-
-      previewContentEl.textContent = fullPrompt;
+        if (data.prompt) {
+          previewContentEl.textContent = data.prompt;
+          const date = new Date(data.timestamp).toLocaleString();
+          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"`;
+        } else {
+          previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/analyze-intent endpoint first.';
+        }
+      } catch (err) {
+        console.error('Failed to load latest prompt:', err);
+        previewContentEl.textContent = 'Failed to load prompt';
+      }
     }
 
     llmProviderEl.addEventListener('change', () => {
@@ -373,11 +335,12 @@ Return ONLY valid JSON, no additional text.`;
     llmModelEl.addEventListener('change', updatePriceDisplay);
     saveBtn.addEventListener('click', savePrompt);
     resetBtn.addEventListener('click', resetPrompt);
-    previewBtn.addEventListener('click', generatePreview);
+    previewBtn.addEventListener('click', loadLatestPrompt);
 
     // Initial load
     loadModels().then(() => loadLlmSettings());
     loadPrompt();
+    loadLatestPrompt();
   </script>
 </body>
 </html>

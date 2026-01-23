@@ -103,6 +103,15 @@ router.post('/generate-from-direction', async (req, res) => {
 
   try {
     const prompt = await createGenerateFromDirectionPrompt(context, messageText, direction);
+
+    // Store the prompt for admin viewing
+    await kv.set(KV_KEYS.latestGenerateFromDirectionPrompt, {
+      prompt,
+      timestamp: new Date().toISOString(),
+      messageText,
+      direction,
+    });
+
     const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();

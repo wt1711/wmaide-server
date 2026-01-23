@@ -195,6 +195,51 @@ router.post('/grade-own-message-prompt', async (req, res) => {
   }
 });
 
+// Latest Analyze Intent Full Prompt API
+router.get('/latest-analyze-intent-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestAnalyzeIntentPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/analyze-intent endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest analyze intent prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Latest Generate From Direction Full Prompt API
+router.get('/latest-generate-from-direction-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestGenerateFromDirectionPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/generate-from-direction endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest generate from direction prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Latest Grade Own Message Full Prompt API
+router.get('/latest-grade-own-message-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestGradeOwnMessagePrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/grade-own-message endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest grade own message prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
 // Available Models API
 router.get('/models', (req, res) => {
   res.json(PROVIDERS);

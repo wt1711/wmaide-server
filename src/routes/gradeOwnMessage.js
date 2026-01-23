@@ -96,6 +96,14 @@ router.post('/grade-own-message', async (req, res) => {
 
   try {
     const prompt = await createGradeOwnMessagePrompt(context, message);
+
+    // Store the prompt for admin viewing
+    await kv.set(KV_KEYS.latestGradeOwnMessagePrompt, {
+      prompt,
+      timestamp: new Date().toISOString(),
+      message: message.text,
+    });
+
     const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();
