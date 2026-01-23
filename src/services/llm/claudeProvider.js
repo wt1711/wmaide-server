@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
-import BaseProvider from './baseProvider.js';
-import { API_KEYS } from '../../config/index.js';
+import Anthropic from "@anthropic-ai/sdk";
+import BaseProvider from "./baseProvider.js";
+import { API_KEYS } from "../../config/index.js";
 
 class ClaudeProvider extends BaseProvider {
   constructor() {
-    super('anthropic');
+    super("anthropic");
   }
 
   initClient() {
@@ -21,20 +21,24 @@ class ClaudeProvider extends BaseProvider {
     try {
       const response = await client.messages.create({
         model: config.model,
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
       });
 
       const durationMs = Date.now() - startTime;
       this.logSuccess(durationMs);
 
-      const textContent = response.content.find((block) => block.type === 'text');
-      const text = textContent?.text || '';
+      const textContent = response.content.find(
+        (block) => block.type === "text",
+      );
+      const text = textContent?.text || "";
       const usage = response.usage
         ? {
             promptTokens: response.usage.input_tokens || 0,
             completionTokens: response.usage.output_tokens || 0,
-            totalTokens: (response.usage.input_tokens || 0) + (response.usage.output_tokens || 0),
+            totalTokens:
+              (response.usage.input_tokens || 0) +
+              (response.usage.output_tokens || 0),
           }
         : null;
 
@@ -54,15 +58,18 @@ class ClaudeProvider extends BaseProvider {
     try {
       const stream = client.messages.stream({
         model: config.model,
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2048,
+        messages: [{ role: "user", content: prompt }],
       });
 
-      let fullText = '';
+      let fullText = "";
 
       for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-          const text = event.delta.text || '';
+        if (
+          event.type === "content_block_delta" &&
+          event.delta?.type === "text_delta"
+        ) {
+          const text = event.delta.text || "";
           if (text) {
             fullText += text;
             onChunk(text);
@@ -78,7 +85,9 @@ class ClaudeProvider extends BaseProvider {
         ? {
             promptTokens: finalMessage.usage.input_tokens || 0,
             completionTokens: finalMessage.usage.output_tokens || 0,
-            totalTokens: (finalMessage.usage.input_tokens || 0) + (finalMessage.usage.output_tokens || 0),
+            totalTokens:
+              (finalMessage.usage.input_tokens || 0) +
+              (finalMessage.usage.output_tokens || 0),
           }
         : null;
 
