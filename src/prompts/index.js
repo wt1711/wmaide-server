@@ -117,6 +117,32 @@ export const DEFAULT_SUGGESTION_MESSAGE_FORMAT = `Bạn là chuyên gia về tá
 
 Câu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký tự.`;
 
+export const DEFAULT_GENERATE_RESPONSE_FORMAT = `You are generating a response to a message in a conversation.
+Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.
+
+This is the very last 10 turns of our conversation context.
+
+Previously sent messages are labelled by sender either [You:] or [Her:]
+
+[context]
+---
+{{conversationHistory}}
+---
+
+Message to reply to: "{{message}}"
+
+[message_sent_time: {{messageSentTime}}]
+
+Create a response that is:
+- Stimulating and attractive
+- Appropriate for the conversation context and the emotion of the original message
+- Uses casual, spoken language
+- Does not exaggerate emotions
+- Creates an emotional response in the other person
+- Short but meaningful{{idea}}
+
+Provide only the content of the reply, without any additional explanation.`;
+
 export async function createConsultationPrompt_EN(
   context,
   selectedMessage,
@@ -171,19 +197,14 @@ export async function createRomanticResponsePrompt_EN(
 ) {
   const conversationHistory = getConversationHistory(context);
 
-  // Fetch all config from KV in parallel
-  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
-  let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
+  // Fetch config from KV in parallel
+  let messageFormat = DEFAULT_GENERATE_RESPONSE_FORMAT;
   let logPromptEnabled = false;
 
   try {
-    const [kvPrompt, kvCriteria, kvLogPrompt] = await Promise.all([
-      kv.get(KV_KEYS.systemPrompt).catch((err) => {
-        console.error("Failed to fetch SYSTEM_PROMPT from KV:", err);
-        return null;
-      }),
-      kv.get(KV_KEYS.responseCriteria).catch((err) => {
-        console.error("Failed to fetch RESPONSE_CRITERIA from KV:", err);
+    const [kvFormat, kvLogPrompt] = await Promise.all([
+      kv.get(KV_KEYS.generateResponseFormat).catch((err) => {
+        console.error("Failed to fetch GENERATE_RESPONSE_FORMAT from KV:", err);
         return null;
       }),
       kv.get(KV_KEYS.logPrompt).catch((err) => {
@@ -192,58 +213,26 @@ export async function createRomanticResponsePrompt_EN(
       }),
     ]);
 
-    if (kvPrompt) systemPrompt = kvPrompt;
-    if (kvCriteria) responseCriteria = kvCriteria;
+    if (kvFormat) messageFormat = kvFormat;
     if (kvLogPrompt) logPromptEnabled = kvLogPrompt;
   } catch (error) {
     console.error("Failed to fetch config from KV, using defaults:", error);
   }
 
-  // Build the prompt - add reasoning request if LOG_PROMPT is enabled
-  let prompt;
+  // Build the prompt using template with placeholders
+  const prompt = messageFormat
+    .replace("{{conversationHistory}}", conversationHistory)
+    .replace("{{message}}", message)
+    .replace("{{messageSentTime}}", formatElapsedTime(lastMsgTimeStamp) || "unknown")
+    .replace("{{idea}}", "");
+
+  // Store the prompt for debugging if LOG_PROMPT is enabled
   if (logPromptEnabled) {
-    prompt = `
-${systemPrompt}
-
-This is the very last 10 turns of our conversation context.
-
-Previously sent messages are labelled by sender either [You:] or [Her:]
-
-[context]
----
-${conversationHistory}
----
-
-Message to reply to: "${message}"
-
-[message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || "unknown"}]
-
-${responseCriteria}`;
-
-    // Store the prompt for debugging
     await kv.set(KV_KEYS.currentFullPrompt, {
       prompt,
       timestamp: new Date().toISOString(),
       message,
     });
-  } else {
-    prompt = `
-${systemPrompt}
-
-This is the very last 10 turns of our conversation context.
-
-Previously sent messages are labelled by sender either [You:] or [Her:]
-
-[context]
----
-${conversationHistory}
----
-
-Message to reply to: "${message}"
-
-${responseCriteria}
-
-Provide only the content of the reply, without any additional explanation.`;
   }
 
   return { prompt, expectsReasoning: logPromptEnabled };
@@ -267,19 +256,14 @@ export async function createRomanticResponsePromptWithIdea_EN(
 ) {
   const conversationHistory = getConversationHistory(context);
 
-  // Fetch all config from KV in parallel
-  let systemPrompt = DEFAULT_SYSTEM_PROMPT;
-  let responseCriteria = DEFAULT_RESPONSE_CRITERIA;
+  // Fetch config from KV in parallel
+  let messageFormat = DEFAULT_GENERATE_RESPONSE_FORMAT;
   let logPromptEnabled = false;
 
   try {
-    const [kvPrompt, kvCriteria, kvLogPrompt] = await Promise.all([
-      kv.get(KV_KEYS.systemPrompt).catch((err) => {
-        console.error("Failed to fetch SYSTEM_PROMPT from KV:", err);
-        return null;
-      }),
-      kv.get(KV_KEYS.responseCriteria).catch((err) => {
-        console.error("Failed to fetch RESPONSE_CRITERIA from KV:", err);
+    const [kvFormat, kvLogPrompt] = await Promise.all([
+      kv.get(KV_KEYS.generateResponseFormat).catch((err) => {
+        console.error("Failed to fetch GENERATE_RESPONSE_FORMAT from KV:", err);
         return null;
       }),
       kv.get(KV_KEYS.logPrompt).catch((err) => {
@@ -288,8 +272,7 @@ export async function createRomanticResponsePromptWithIdea_EN(
       }),
     ]);
 
-    if (kvPrompt) systemPrompt = kvPrompt;
-    if (kvCriteria) responseCriteria = kvCriteria;
+    if (kvFormat) messageFormat = kvFormat;
     if (kvLogPrompt) logPromptEnabled = kvLogPrompt;
   } catch (error) {
     console.error("Failed to fetch config from KV, using defaults:", error);
@@ -300,52 +283,21 @@ export async function createRomanticResponsePromptWithIdea_EN(
     ? `\n\nIMPORTANT: The user wants to express this idea in the response: "${spec.idea}". Incorporate this idea naturally into your reply while maintaining the conversation's tone and context.`
     : "";
 
-  // Build the prompt - add reasoning request if LOG_PROMPT is enabled
-  let prompt;
+  // Build the prompt using template with placeholders
+  const prompt = messageFormat
+    .replace("{{conversationHistory}}", conversationHistory)
+    .replace("{{message}}", message)
+    .replace("{{messageSentTime}}", formatElapsedTime(lastMsgTimeStamp) || "unknown")
+    .replace("{{idea}}", ideaInstruction);
+
+  // Store the prompt for debugging if LOG_PROMPT is enabled
   if (logPromptEnabled) {
-    prompt = `
-${systemPrompt}
-
-This is the very last 10 turns of our conversation context.
-
-Previously sent messages are labelled by sender either [You:] or [Her:]
-
-[context]
----
-${conversationHistory}
----
-
-Message to reply to: "${message}"
-
-[message_sent_time: ${formatElapsedTime(lastMsgTimeStamp) || "unknown"}]
-
-${responseCriteria}${ideaInstruction}`;
-
-    // Store the prompt for debugging
     await kv.set(KV_KEYS.currentFullPrompt, {
       prompt,
       timestamp: new Date().toISOString(),
       message,
       idea: spec.idea || null,
     });
-  } else {
-    prompt = `
-${systemPrompt}
-
-This is the very last 10 turns of our conversation context.
-
-Previously sent messages are labelled by sender either [You:] or [Her:]
-
-[context]
----
-${conversationHistory}
----
-
-Message to reply to: "${message}"
-
-${responseCriteria}${ideaInstruction}
-
-Provide only the content of the reply, without any additional explanation.`;
   }
 
   return { prompt, expectsReasoning: logPromptEnabled };

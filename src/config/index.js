@@ -48,6 +48,7 @@ export const KV_KEYS = {
   suggestionPrompt: 'SUGGESTION_PROMPT',
   suggestionMessageFormat: 'SUGGESTION_MESSAGE_FORMAT',
   latestSuggestionPrompt: 'LATEST_SUGGESTION_PROMPT',
+  generateResponseFormat: 'GENERATE_RESPONSE_FORMAT',
 };
 
 // Admin users (bypass credit limits)

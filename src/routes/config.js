@@ -11,6 +11,7 @@ import {
   DEFAULT_GRADE_OWN_MESSAGE_MESSAGE_FORMAT,
   DEFAULT_SUGGESTION_PROMPT,
   DEFAULT_SUGGESTION_MESSAGE_FORMAT,
+  DEFAULT_GENERATE_RESPONSE_FORMAT,
 } from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 import { PROVIDERS } from '../config/models.js';
@@ -387,6 +388,32 @@ router.get('/latest-suggestion-prompt', async (req, res) => {
   } catch (error) {
     console.error('Failed to fetch latest suggestion prompt:', error);
     res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Generate Response Format API
+router.get('/generate-response-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.generateResponseFormat);
+    res.json({ format: format || DEFAULT_GENERATE_RESPONSE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_RESPONSE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_GENERATE_RESPONSE_FORMAT });
+  }
+});
+
+router.post('/generate-response-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.generateResponseFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GENERATE_RESPONSE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
   }
 });
 

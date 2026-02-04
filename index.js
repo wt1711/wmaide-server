@@ -55,6 +55,9 @@ app.get('/admin-grade-own.html', (req, res) => {
 app.get('/admin-suggestion.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin-suggestion.html'));
 });
+app.get('/admin-generate-response.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-generate-response.html'));
+});
 
 export default app;
 

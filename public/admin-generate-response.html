@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analyze Intent - Prompt Admin</title>
+  <title>Generate Response - Prompt Admin</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -122,8 +122,8 @@
 </head>
 <body>
   <div class="container">
-    <h1>Analyze Intent Prompt</h1>
-    <p class="subtitle">Configure the AI prompt for analyzing message intent and interest level</p>
+    <h1>Generate Response Prompt</h1>
+    <p class="subtitle">Configure the AI prompt for generating message responses (combines persona, context, and criteria)</p>
 
     <div class="nav-links">
       <a href="/admin.html">Main Admin</a>
@@ -152,13 +152,13 @@
       <div class="section">
         <h3>Prompt Template</h3>
         <p style="color: #666; font-size: 13px; margin-bottom: 10px;">
-          Full prompt template sent to the LLM. Available placeholders:<br>
-          <code>{{conversationHistory}}</code> - The conversation history<br>
-          <code>{{messageText}}</code> - The message text to analyze<br>
-          <code>{{sender}}</code> - The sender of the message<br>
-          <code>{{timestamp}}</code> - Message timestamp
+          Full prompt template sent to the LLM for generating responses. Available placeholders:<br>
+          <code>{{conversationHistory}}</code> - The conversation history (last 10 turns, formatted as "You:" or "Her:")<br>
+          <code>{{message}}</code> - The message to reply to<br>
+          <code>{{messageSentTime}}</code> - Elapsed time since message was sent (e.g., "5 minutes ago")<br>
+          <code>{{idea}}</code> - Optional: The user's idea to incorporate into the response
         </p>
-        <textarea id="format-textarea" placeholder="Loading..." style="height: 400px;"></textarea>
+        <textarea id="format-textarea" placeholder="Loading..." style="height: 500px;"></textarea>
         <br><br>
         <button id="save-btn">Save Template</button>
         <button id="reset-btn" class="reset-btn">Reset to Default</button>
@@ -172,7 +172,7 @@
         <button id="preview-btn" class="preview-btn">Refresh</button>
       </h3>
       <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-        Shows the last prompt sent to the LLM when /api/analyze-intent was called
+        Shows the last prompt sent to the LLM when the generate response API was called (requires LOG_PROMPT enabled)
       </p>
       <div id="preview-meta" style="font-size: 12px; color: #888; margin-bottom: 10px;"></div>
       <div id="preview-content" class="preview-content">
@@ -256,7 +256,7 @@
 
     async function loadFormat() {
       try {
-        const res = await fetch('/api/analyze-intent-message-format');
+        const res = await fetch('/api/generate-response-format');
         const data = await res.json();
         formatTextarea.value = data.format || '';
       } catch (err) {
@@ -271,7 +271,7 @@
       statusEl.className = 'status';
 
       try {
-        const res = await fetch('/api/analyze-intent-message-format', {
+        const res = await fetch('/api/generate-response-format', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ format: formatTextarea.value })
@@ -300,51 +300,31 @@
         return;
       }
 
-      formatTextarea.value = `You are an expert at analyzing romantic conversations and reading emotional signals. Your task is to analyze a message and provide insights about:
-1. Interest level - how interested the sender appears to be (0-100 score)
-2. Emotional tone - what emotions are being expressed
-3. State read - a brief interpretation of what's happening
-4. Recommended response directions - strategic ways to reply
+      formatTextarea.value = `You are generating a response to a message in a conversation.
+Your response should be short, emotionally impactful, not lengthy or detailed, under 1 sentence or 140 characters, and express only one idea.
 
-Be accurate and insightful. Consider context, word choice, emoji usage, message length, and timing patterns.
+This is the very last 10 turns of our conversation context.
 
+Previously sent messages are labelled by sender either [You:] or [Her:]
+
+[context]
 ---
-Conversation History:
 {{conversationHistory}}
 ---
 
-Message to analyze: "{{messageText}}"
-Sender: {{sender}}
-Timestamp: {{timestamp}}
+Message to reply to: "{{message}}"
 
-Respond with a JSON object in this exact format:
-{
-  "interestLevel": {
-    "score": <number 0-100>,
-    "label": "<Very High|High|Moderate|Low|Uncertain>",
-    "indicators": ["<indicator1>", "<indicator2>"]
-  },
-  "emotionalTone": {
-    "primary": "<primary emotion>",
-    "secondary": "<secondary emotion or null>",
-    "confidence": <number 0-100>
-  },
-  "stateRead": "<1-2 sentence interpretation>",
-  "recommendedDirection": {
-    "label": "<short label>",
-    "tone": "<suggested tone>",
-    "emoji": "<single emoji>",
-    "description": "<1 sentence explanation>"
-  },
-  "alternativeDirections": [
-    {
-      "label": "<short label>",
-      "tone": "<suggested tone>",
-      "emoji": "<single emoji>",
-      "description": "<1 sentence explanation>"
-    }
-  ]
-}`;
+[message_sent_time: {{messageSentTime}}]
+
+Create a response that is:
+- Stimulating and attractive
+- Appropriate for the conversation context and the emotion of the original message
+- Uses casual, spoken language
+- Does not exaggerate emotions
+- Creates an emotional response in the other person
+- Short but meaningful{{idea}}
+
+Provide only the content of the reply, without any additional explanation.`;
 
       await saveFormat();
     }
@@ -358,15 +338,16 @@ Respond with a JSON object in this exact format:
       previewMetaEl.textContent = '';
 
       try {
-        const res = await fetch('/api/latest-analyze-intent-prompt');
+        const res = await fetch('/api/full-prompt-preview');
         const data = await res.json();
 
         if (data.prompt) {
           previewContentEl.textContent = data.prompt;
           const date = new Date(data.timestamp).toLocaleString();
-          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"`;
+          const idea = data.idea ? ` | Idea: "${data.idea}"` : '';
+          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"${idea}`;
         } else {
-          previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/analyze-intent endpoint first.';
+          previewContentEl.textContent = data.message || 'No prompt stored yet. Enable LOG_PROMPT and call the generate response API.';
         }
       } catch (err) {
         console.error('Failed to load latest prompt:', err);
