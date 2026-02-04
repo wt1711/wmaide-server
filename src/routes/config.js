@@ -1,6 +1,18 @@
 import { Router } from 'express';
 import { kv } from '@vercel/kv';
-import { DEFAULT_SYSTEM_PROMPT, DEFAULT_RESPONSE_CRITERIA } from '../prompts/index.js';
+import {
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_RESPONSE_CRITERIA,
+  DEFAULT_ANALYZE_INTENT_PROMPT,
+  DEFAULT_ANALYZE_INTENT_MESSAGE_FORMAT,
+  DEFAULT_GENERATE_FROM_DIRECTION_PROMPT,
+  DEFAULT_GENERATE_FROM_DIRECTION_MESSAGE_FORMAT,
+  DEFAULT_GRADE_OWN_MESSAGE_PROMPT,
+  DEFAULT_GRADE_OWN_MESSAGE_MESSAGE_FORMAT,
+  DEFAULT_SUGGESTION_PROMPT,
+  DEFAULT_SUGGESTION_MESSAGE_FORMAT,
+  DEFAULT_GENERATE_RESPONSE_FORMAT,
+} from '../prompts/index.js';
 import { DEFAULTS, KV_KEYS } from '../config/index.js';
 import { PROVIDERS } from '../config/models.js';
 import configCache from '../services/configCache.js';
@@ -108,6 +120,300 @@ router.post('/response-criteria', async (req, res) => {
   } catch (error) {
     console.error('Failed to save RESPONSE_CRITERIA to KV:', error);
     res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Analyze Intent Prompt API
+router.get('/analyze-intent-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.analyzeIntentPrompt);
+    res.json({ prompt: prompt || DEFAULT_ANALYZE_INTENT_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch ANALYZE_INTENT_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_ANALYZE_INTENT_PROMPT });
+  }
+});
+
+router.post('/analyze-intent-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.analyzeIntentPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save ANALYZE_INTENT_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Analyze Intent Message Format API
+router.get('/analyze-intent-message-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.analyzeIntentMessageFormat);
+    res.json({ format: format || DEFAULT_ANALYZE_INTENT_MESSAGE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch ANALYZE_INTENT_MESSAGE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_ANALYZE_INTENT_MESSAGE_FORMAT });
+  }
+});
+
+router.post('/analyze-intent-message-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.analyzeIntentMessageFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save ANALYZE_INTENT_MESSAGE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
+  }
+});
+
+// Generate From Direction Prompt API
+router.get('/generate-from-direction-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.generateFromDirectionPrompt);
+    res.json({ prompt: prompt || DEFAULT_GENERATE_FROM_DIRECTION_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_FROM_DIRECTION_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_GENERATE_FROM_DIRECTION_PROMPT });
+  }
+});
+
+router.post('/generate-from-direction-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.generateFromDirectionPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GENERATE_FROM_DIRECTION_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Generate From Direction Message Format API
+router.get('/generate-from-direction-message-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.generateFromDirectionMessageFormat);
+    res.json({ format: format || DEFAULT_GENERATE_FROM_DIRECTION_MESSAGE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_FROM_DIRECTION_MESSAGE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_GENERATE_FROM_DIRECTION_MESSAGE_FORMAT });
+  }
+});
+
+router.post('/generate-from-direction-message-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.generateFromDirectionMessageFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GENERATE_FROM_DIRECTION_MESSAGE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
+  }
+});
+
+// Grade Own Message Prompt API
+router.get('/grade-own-message-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.gradeOwnMessagePrompt);
+    res.json({ prompt: prompt || DEFAULT_GRADE_OWN_MESSAGE_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch GRADE_OWN_MESSAGE_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_GRADE_OWN_MESSAGE_PROMPT });
+  }
+});
+
+router.post('/grade-own-message-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.gradeOwnMessagePrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GRADE_OWN_MESSAGE_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Grade Own Message Message Format API
+router.get('/grade-own-message-message-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.gradeOwnMessageMessageFormat);
+    res.json({ format: format || DEFAULT_GRADE_OWN_MESSAGE_MESSAGE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch GRADE_OWN_MESSAGE_MESSAGE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_GRADE_OWN_MESSAGE_MESSAGE_FORMAT });
+  }
+});
+
+router.post('/grade-own-message-message-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.gradeOwnMessageMessageFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GRADE_OWN_MESSAGE_MESSAGE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
+  }
+});
+
+// Latest Analyze Intent Full Prompt API
+router.get('/latest-analyze-intent-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestAnalyzeIntentPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/analyze-intent endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest analyze intent prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Latest Generate From Direction Full Prompt API
+router.get('/latest-generate-from-direction-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestGenerateFromDirectionPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/generate-from-direction endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest generate from direction prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Latest Grade Own Message Full Prompt API
+router.get('/latest-grade-own-message-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestGradeOwnMessagePrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/grade-own-message endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest grade own message prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Suggestion Prompt API
+router.get('/suggestion-prompt', async (req, res) => {
+  try {
+    const prompt = await kv.get(KV_KEYS.suggestionPrompt);
+    res.json({ prompt: prompt || DEFAULT_SUGGESTION_PROMPT });
+  } catch (error) {
+    console.error('Failed to fetch SUGGESTION_PROMPT from KV:', error);
+    res.json({ prompt: DEFAULT_SUGGESTION_PROMPT });
+  }
+});
+
+router.post('/suggestion-prompt', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (prompt === undefined) {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+    await kv.set(KV_KEYS.suggestionPrompt, prompt);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save SUGGESTION_PROMPT to KV:', error);
+    res.status(500).json({ error: 'Failed to save prompt' });
+  }
+});
+
+// Suggestion Message Format API
+router.get('/suggestion-message-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.suggestionMessageFormat);
+    res.json({ format: format || DEFAULT_SUGGESTION_MESSAGE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch SUGGESTION_MESSAGE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_SUGGESTION_MESSAGE_FORMAT });
+  }
+});
+
+router.post('/suggestion-message-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.suggestionMessageFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save SUGGESTION_MESSAGE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
+  }
+});
+
+// Latest Suggestion Full Prompt API
+router.get('/latest-suggestion-prompt', async (req, res) => {
+  try {
+    const data = await kv.get(KV_KEYS.latestSuggestionPrompt);
+    if (data) {
+      res.json(data);
+    } else {
+      res.json({ message: 'No prompt stored yet. Call the /api/suggestion endpoint first.' });
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest suggestion prompt:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt' });
+  }
+});
+
+// Generate Response Format API
+router.get('/generate-response-format', async (req, res) => {
+  try {
+    const format = await kv.get(KV_KEYS.generateResponseFormat);
+    res.json({ format: format || DEFAULT_GENERATE_RESPONSE_FORMAT });
+  } catch (error) {
+    console.error('Failed to fetch GENERATE_RESPONSE_FORMAT from KV:', error);
+    res.json({ format: DEFAULT_GENERATE_RESPONSE_FORMAT });
+  }
+});
+
+router.post('/generate-response-format', async (req, res) => {
+  try {
+    const { format } = req.body;
+    if (format === undefined) {
+      return res.status(400).json({ error: 'Missing format' });
+    }
+    await kv.set(KV_KEYS.generateResponseFormat, format);
+    configCache.invalidate();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save GENERATE_RESPONSE_FORMAT to KV:', error);
+    res.status(500).json({ error: 'Failed to save format' });
   }
 });
 
