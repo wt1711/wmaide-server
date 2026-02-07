@@ -7,6 +7,7 @@ export const API_KEYS = {
   openai: process.env.OPENAI_API_KEY,
   anthropic: process.env.ANTHROPIC_API_KEY,
   xai: process.env.XAI_API_KEY,
+  google: process.env.GOOGLE_API_KEY,
 };
 
 // Assistant Configuration
@@ -77,6 +78,7 @@ export const CREDIT_LIMITS = {
 // Provider API Base URLs
 export const PROVIDER_URLS = {
   xai: 'https://api.x.ai/v1',
+  google: 'https://generativelanguage.googleapis.com/v1beta/openai/',
 };
 
 export default {

@@ -38,6 +38,13 @@ export const PROVIDERS = [
       { id: 'grok-3', 'input_price': 3 },
     ],
   },
+  {
+    id: 'google',
+    name: 'Google Gemini',
+    models: [
+      { id: 'gemini-pro-3', 'input_price': 1.25 },
+    ],
+  },
 ];
 
 /**
