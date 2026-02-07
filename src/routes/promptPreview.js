@@ -50,8 +50,11 @@ router.get('/full-prompt-preview', async (req, res) => {
 
     res.json({
       prompt: data.prompt,
+      output: data.output || null,
       timestamp: data.timestamp,
       originalMessage: data.message,
+      idea: data.idea || null,
+      provider: data.provider || null,
     });
   } catch (error) {
     console.error('Failed to get latest prompt:', error);

@@ -177,6 +177,10 @@
       <div id="preview-content" class="preview-content">
         Loading...
       </div>
+      <h4 style="margin-top: 15px;">LLM Output</h4>
+      <div id="preview-output" class="preview-content" style="background: #0d2137; color: #7ec8e3;">
+        No output yet
+      </div>
     </div>
   </div>
 
@@ -315,9 +319,11 @@ Câu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký
     const previewBtn = document.getElementById('preview-btn');
     const previewContentEl = document.getElementById('preview-content');
     const previewMetaEl = document.getElementById('preview-meta');
+    const previewOutputEl = document.getElementById('preview-output');
 
     async function loadLatestPrompt() {
       previewContentEl.textContent = 'Loading...';
+      previewOutputEl.textContent = 'Loading...';
       previewMetaEl.textContent = '';
 
       try {
@@ -334,13 +340,19 @@ Câu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký
           if (data.question) {
             metaText += ` | Question: "${data.question}"`;
           }
+          if (data.provider) {
+            metaText += ` | Provider: ${data.provider}`;
+          }
           previewMetaEl.textContent = metaText;
+          previewOutputEl.textContent = data.output || 'No output recorded';
         } else {
           previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/suggestion endpoint first.';
+          previewOutputEl.textContent = 'No output yet';
         }
       } catch (err) {
         console.error('Failed to load latest prompt:', err);
         previewContentEl.textContent = 'Failed to load prompt';
+        previewOutputEl.textContent = 'Failed to load output';
       }
     }
 

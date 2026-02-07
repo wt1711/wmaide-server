@@ -159,6 +159,17 @@ router.post('/generate-response', async (req, res) => {
     const { prompt, expectsReasoning } = await createRomanticResponsePrompt_EN(context, message, spec, lastMsgTimeStamp);
     const result = await generateResponse(prompt);
 
+    // Store the prompt and LLM output for admin viewing
+    if (expectsReasoning) {
+      await kv.set(KV_KEYS.currentFullPrompt, {
+        prompt,
+        output: result.text || result.error || '',
+        timestamp: new Date().toISOString(),
+        message,
+        provider: result.provider,
+      });
+    }
+
     const requestEndTime = Date.now();
     const totalDuration = requestEndTime - requestStartTime;
     console.log(`🎯 Total request time: ${totalDuration}ms (${(totalDuration / 1000).toFixed(2)}s)`);
@@ -265,6 +276,18 @@ router.post('/generate-response-with-idea', async (req, res) => {
   try {
     const { prompt, expectsReasoning } = await createRomanticResponsePromptWithIdea_EN(context, message, spec, lastMsgTimeStamp);
     const result = await generateResponse(prompt);
+
+    // Store the prompt and LLM output for admin viewing
+    if (expectsReasoning) {
+      await kv.set(KV_KEYS.currentFullPrompt, {
+        prompt,
+        output: result.text || result.error || '',
+        timestamp: new Date().toISOString(),
+        message,
+        idea: spec.idea || null,
+        provider: result.provider,
+      });
+    }
 
     const requestEndTime = Date.now();
     const totalDuration = requestEndTime - requestStartTime;
@@ -396,6 +419,17 @@ router.post('/generate-response-stream', async (req, res) => {
     );
 
     const totalDuration = Date.now() - requestStartTime;
+
+    // Store the prompt and LLM output for admin viewing
+    if (expectsReasoning) {
+      kv.set(KV_KEYS.currentFullPrompt, {
+        prompt,
+        output: fullText || result.error || '',
+        timestamp: new Date().toISOString(),
+        message,
+        provider: result.provider,
+      }).catch((err) => console.error('Failed to store prompt:', err));
+    }
 
     // Handle error response
     if (result.error) {

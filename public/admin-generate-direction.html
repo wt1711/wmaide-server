@@ -180,6 +180,10 @@
       <div id="preview-content" class="preview-content">
         Loading...
       </div>
+      <h4 style="margin-top: 15px;">LLM Output</h4>
+      <div id="preview-output" class="preview-content" style="background: #0d2137; color: #7ec8e3;">
+        No output yet
+      </div>
     </div>
   </div>
 
@@ -338,9 +342,11 @@ Return ONLY valid JSON, no additional text.`;
     const previewBtn = document.getElementById('preview-btn');
     const previewContentEl = document.getElementById('preview-content');
     const previewMetaEl = document.getElementById('preview-meta');
+    const previewOutputEl = document.getElementById('preview-output');
 
     async function loadLatestPrompt() {
       previewContentEl.textContent = 'Loading...';
+      previewOutputEl.textContent = 'Loading...';
       previewMetaEl.textContent = '';
 
       try {
@@ -351,13 +357,17 @@ Return ONLY valid JSON, no additional text.`;
           previewContentEl.textContent = data.prompt;
           const date = new Date(data.timestamp).toLocaleString();
           const directionInfo = data.direction ? `Direction: ${data.direction.label} (${data.direction.tone})` : '';
-          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.messageText}" | ${directionInfo}`;
+          const provider = data.provider ? ` | Provider: ${data.provider}` : '';
+          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.messageText}" | ${directionInfo}${provider}`;
+          previewOutputEl.textContent = data.output || 'No output recorded';
         } else {
           previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/generate-from-direction endpoint first.';
+          previewOutputEl.textContent = 'No output yet';
         }
       } catch (err) {
         console.error('Failed to load latest prompt:', err);
         previewContentEl.textContent = 'Failed to load prompt';
+        previewOutputEl.textContent = 'Failed to load output';
       }
     }
 

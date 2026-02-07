@@ -226,15 +226,6 @@ export async function createRomanticResponsePrompt_EN(
     .replace("{{messageSentTime}}", formatElapsedTime(lastMsgTimeStamp) || "unknown")
     .replace("{{idea}}", "");
 
-  // Store the prompt for debugging if LOG_PROMPT is enabled
-  if (logPromptEnabled) {
-    await kv.set(KV_KEYS.currentFullPrompt, {
-      prompt,
-      timestamp: new Date().toISOString(),
-      message,
-    });
-  }
-
   return { prompt, expectsReasoning: logPromptEnabled };
 }
 
@@ -289,16 +280,6 @@ export async function createRomanticResponsePromptWithIdea_EN(
     .replace("{{message}}", message)
     .replace("{{messageSentTime}}", formatElapsedTime(lastMsgTimeStamp) || "unknown")
     .replace("{{idea}}", ideaInstruction);
-
-  // Store the prompt for debugging if LOG_PROMPT is enabled
-  if (logPromptEnabled) {
-    await kv.set(KV_KEYS.currentFullPrompt, {
-      prompt,
-      timestamp: new Date().toISOString(),
-      message,
-      idea: spec.idea || null,
-    });
-  }
 
   return { prompt, expectsReasoning: logPromptEnabled };
 }

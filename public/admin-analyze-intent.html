@@ -178,6 +178,10 @@
       <div id="preview-content" class="preview-content">
         Loading...
       </div>
+      <h4 style="margin-top: 15px;">LLM Output</h4>
+      <div id="preview-output" class="preview-content" style="background: #0d2137; color: #7ec8e3;">
+        No output yet
+      </div>
     </div>
   </div>
 
@@ -352,9 +356,11 @@ Respond with a JSON object in this exact format:
     const previewBtn = document.getElementById('preview-btn');
     const previewContentEl = document.getElementById('preview-content');
     const previewMetaEl = document.getElementById('preview-meta');
+    const previewOutputEl = document.getElementById('preview-output');
 
     async function loadLatestPrompt() {
       previewContentEl.textContent = 'Loading...';
+      previewOutputEl.textContent = 'Loading...';
       previewMetaEl.textContent = '';
 
       try {
@@ -364,13 +370,17 @@ Respond with a JSON object in this exact format:
         if (data.prompt) {
           previewContentEl.textContent = data.prompt;
           const date = new Date(data.timestamp).toLocaleString();
-          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"`;
+          const provider = data.provider ? ` | Provider: ${data.provider}` : '';
+          previewMetaEl.textContent = `Last called: ${date} | Message: "${data.message}"${provider}`;
+          previewOutputEl.textContent = data.output || 'No output recorded';
         } else {
           previewContentEl.textContent = data.message || 'No prompt stored yet. Call the /api/analyze-intent endpoint first.';
+          previewOutputEl.textContent = 'No output yet';
         }
       } catch (err) {
         console.error('Failed to load latest prompt:', err);
         previewContentEl.textContent = 'Failed to load prompt';
+        previewOutputEl.textContent = 'Failed to load output';
       }
     }
 

@@ -16,15 +16,17 @@ router.post('/suggestion', async (req, res) => {
   try {
     const prompt = await createConsultationPrompt_EN(context, selectedMessage, question);
 
-    // Store the prompt for admin viewing
+    const result = await generateResponse(prompt);
+
+    // Store the prompt and LLM output for admin viewing
     await kv.set(KV_KEYS.latestSuggestionPrompt, {
       prompt,
+      output: result.text || result.error || '',
       timestamp: new Date().toISOString(),
       selectedMessage: selectedMessage?.text || null,
       question: question || null,
+      provider: result.provider,
     });
-
-    const result = await generateResponse(prompt);
 
     if (result.error) {
       return res.status(result.status || 500).json({ error: result.error });

@@ -104,15 +104,17 @@ router.post('/generate-from-direction', async (req, res) => {
   try {
     const prompt = await createGenerateFromDirectionPrompt(context, messageText, direction);
 
-    // Store the prompt for admin viewing
+    const result = await generateResponse(prompt);
+
+    // Store the prompt and LLM output for admin viewing
     await kv.set(KV_KEYS.latestGenerateFromDirectionPrompt, {
       prompt,
+      output: result.text || result.error || '',
       timestamp: new Date().toISOString(),
       messageText,
       direction,
+      provider: result.provider,
     });
-
-    const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();
     const totalDuration = requestEndTime - requestStartTime;

@@ -97,14 +97,16 @@ router.post('/analyze-intent', async (req, res) => {
   try {
     const prompt = await createAnalyzeIntentPrompt(context, message);
 
-    // Store the prompt for admin viewing
+    const result = await generateResponse(prompt);
+
+    // Store the prompt and LLM output for admin viewing
     await kv.set(KV_KEYS.latestAnalyzeIntentPrompt, {
       prompt,
+      output: result.text || result.error || '',
       timestamp: new Date().toISOString(),
       message: message.text,
+      provider: result.provider,
     });
-
-    const result = await generateResponse(prompt);
 
     const requestEndTime = Date.now();
     const totalDuration = requestEndTime - requestStartTime;
