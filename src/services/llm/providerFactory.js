@@ -1,6 +1,7 @@
 import openaiProvider from './openaiProvider.js';
 import claudeProvider from './claudeProvider.js';
 import grokProvider from './grokProvider.js';
+import geminiProvider from './geminiProvider.js';
 
 const providers = {
   openai: openaiProvider,
@@ -8,6 +9,7 @@ const providers = {
   claude: claudeProvider,
   xai: grokProvider,
   grok: grokProvider,
+  gemini: geminiProvider,
 };
 
 /**
