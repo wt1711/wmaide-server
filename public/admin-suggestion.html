@@ -145,6 +145,7 @@
           <select id="llm-model"></select>
         </div>
         <span id="model-price" style="color: #666;"></span>
+        <button id="save-llm-model">Save Model</button>
       </div>
     </div>
 
@@ -184,6 +185,7 @@
     const llmProviderEl = document.getElementById('llm-provider');
     const llmModelEl = document.getElementById('llm-model');
     const modelPriceEl = document.getElementById('model-price');
+    const saveLlmModelBtn = document.getElementById('save-llm-model');
 
     const formatTextarea = document.getElementById('format-textarea');
     const saveFormatBtn = document.getElementById('save-format-btn');
@@ -344,6 +346,37 @@ Câu trả lời của bạn không được vượt quá 4 câu hoặc 1000 ký
       }
     }
 
+    async function saveLlmModel() {
+      saveLlmModelBtn.disabled = true;
+      saveLlmModelBtn.textContent = 'Saving...';
+      try {
+        const [modelRes, providerRes] = await Promise.all([
+          fetch('/api/llm-model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ modelName: llmModelEl.value })
+          }),
+          fetch('/api/llm-provider', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: llmProviderEl.value })
+          })
+        ]);
+        if (modelRes.ok && providerRes.ok) {
+          alert('Provider & Model saved!');
+        } else {
+          alert('Error saving provider or model');
+        }
+      } catch (err) {
+        console.error('Failed to save LLM model:', err);
+        alert('Failed to save LLM model');
+      } finally {
+        saveLlmModelBtn.disabled = false;
+        saveLlmModelBtn.textContent = 'Save Model';
+      }
+    }
+
+    saveLlmModelBtn.addEventListener('click', saveLlmModel);
     llmProviderEl.addEventListener('change', () => {
       populateModelsForProvider(llmProviderEl.value);
     });

@@ -35,5 +35,9 @@ async function getConfig() {
  */
 export async function generateResponse(prompt) {
   const config = await getConfig();
-  return generateWithErrorHandling(config.provider, config, prompt);
+  const startTime = Date.now();
+  const result = await generateWithErrorHandling(config.provider, config, prompt);
+  const totalMs = Date.now() - startTime;
+  console.log(`📊 [${config.provider}/${config.model}] completed in ${totalMs}ms (${(totalMs / 1000).toFixed(2)}s)`);
+  return result;
 }

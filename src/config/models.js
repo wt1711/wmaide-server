@@ -30,6 +30,13 @@ export const PROVIDERS = [
     ],
   },
   {
+    id: 'gemini',
+    name: 'Google Gemini',
+    models: [
+      { id: 'gemini-3-pro-preview', 'input_price': 1.25 },
+    ],
+  },
+  {
     id: 'xai',
     name: 'xAI Grok',
     models: [
