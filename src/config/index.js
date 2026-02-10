@@ -66,6 +66,7 @@ export const PREMIUM_USERS = [
   "@instagram_7730134120:matrix.lvbrd.xyz", // minh.lt_
   "@instagram_3487576414:matrix.lvbrd.xyz", // dkieeuu
   "@instagram_56911609594:matrix.lvbrd.xyz", // vedup.1711
+  "@instagram_216649258:matrix.lvbrd.xyz", // sasha_universe
 ];
 
 // Credit limits
